@@ -1,0 +1,240 @@
+{
+  "spec": "breakout/prompt.md",
+  "generated": "2026-09-02",
+  "method": "static code review (no browser execution)",
+  "models": [
+    {
+      "model": "qwen3-8-RIDGE",
+      "score": 9.5,
+      "verdict": "pass",
+      "file": "models/qwen3-8-RIDGE/index.html",
+      "rank": 1,
+      "checks": {
+        "canvas_800x600": true,
+        "bricks_8x5": true,
+        "row_colors": true,
+        "controls_AD": true,
+        "space_launch_pause": true,
+        "paddle_angle": true,
+        "lives_3_wait": true,
+        "win_lose": true,
+        "screens_restart": true,
+        "hud_10": true,
+        "raf_dt": true,
+        "anti_tunnel": true
+      }
+    },
+    {
+      "model": "qwen3-8-Q4XS",
+      "score": 9.4,
+      "verdict": "pass",
+      "file": "models/qwen3-8-Q4XS/index.html",
+      "rank": 2,
+      "checks": {
+        "canvas_800x600": true,
+        "bricks_8x5": true,
+        "row_colors": true,
+        "controls_AD": true,
+        "space_launch_pause": true,
+        "paddle_angle": true,
+        "lives_3_wait": true,
+        "win_lose": true,
+        "screens_restart": true,
+        "hud_10": true,
+        "raf_dt": true,
+        "anti_tunnel": true
+      }
+    },
+    {
+      "model": "qwen3-8-Q3S",
+      "score": 9.3,
+      "verdict": "pass",
+      "file": "models/qwen3-8-Q3S/index.html",
+      "rank": 3,
+      "checks": {
+        "canvas_800x600": true,
+        "bricks_8x5": true,
+        "row_colors": true,
+        "controls_AD": true,
+        "space_launch_pause": true,
+        "paddle_angle": true,
+        "lives_3_wait": true,
+        "win_lose": true,
+        "screens_restart": true,
+        "hud_10": true,
+        "raf_dt": true,
+        "anti_tunnel": true
+      }
+    },
+    {
+      "model": "qwen3-8-Q2",
+      "score": 9.2,
+      "verdict": "pass",
+      "file": "models/qwen3-8-Q2/index.html",
+      "rank": 4,
+      "checks": {
+        "canvas_800x600": true,
+        "bricks_8x5": true,
+        "row_colors": true,
+        "controls_AD": true,
+        "space_launch_pause": true,
+        "paddle_angle": true,
+        "lives_3_wait": true,
+        "win_lose": true,
+        "screens_restart": true,
+        "hud_10": true,
+        "raf_dt": true,
+        "anti_tunnel": false
+      }
+    },
+    {
+      "model": "qwen3-8-Q3XL",
+      "score": 9.1,
+      "verdict": "pass",
+      "file": "models/qwen3-8-Q3XL/index.html",
+      "rank": 5,
+      "checks": {
+        "canvas_800x600": true,
+        "bricks_8x5": true,
+        "row_colors": true,
+        "controls_AD": true,
+        "space_launch_pause": true,
+        "paddle_angle": true,
+        "lives_3_wait": true,
+        "win_lose": true,
+        "screens_restart": true,
+        "hud_10": true,
+        "raf_dt": true,
+        "anti_tunnel": false
+      }
+    },
+    {
+      "model": "tiel-coder-35b-IQ3_XXS",
+      "score": 7.5,
+      "verdict": "partial",
+      "file": "models/tiel-coder-35b-IQ3_XXS/index.html",
+      "rank": 6,
+      "checks": {
+        "canvas_800x600": true,
+        "bricks_8x5": true,
+        "row_colors": true,
+        "controls_AD": true,
+        "space_launch_pause": false,
+        "paddle_angle": true,
+        "lives_3_wait": true,
+        "win_lose": true,
+        "screens_restart": true,
+        "hud_10": true,
+        "raf_dt": true,
+        "anti_tunnel": false
+      }
+    },
+    {
+      "model": "gemma4-26A4B",
+      "score": 7.0,
+      "verdict": "partial",
+      "file": "models/gemma4-26A4B/index.html",
+      "rank": 7,
+      "checks": {
+        "canvas_800x600": true,
+        "bricks_8x5": false,
+        "row_colors": true,
+        "controls_AD": true,
+        "space_launch_pause": false,
+        "paddle_angle": true,
+        "lives_3_wait": true,
+        "win_lose": true,
+        "screens_restart": false,
+        "hud_10": true,
+        "raf_dt": true,
+        "anti_tunnel": false
+      }
+    },
+    {
+      "model": "ornith-1-5-9b",
+      "score": 6.5,
+      "verdict": "fail",
+      "file": "models/ornith-1-5-9b/index.html",
+      "rank": 8,
+      "checks": {
+        "canvas_800x600": true,
+        "bricks_8x5": true,
+        "row_colors": true,
+        "controls_AD": true,
+        "space_launch_pause": true,
+        "paddle_angle": true,
+        "lives_3_wait": false,
+        "win_lose": false,
+        "screens_restart": true,
+        "hud_10": false,
+        "raf_dt": true,
+        "anti_tunnel": false
+      },
+      "notes": "checkBallFell() never called"
+    },
+    {
+      "model": "qwen3-5-9b-Q8",
+      "score": 4.0,
+      "verdict": "fail",
+      "file": "models/qwen3-5-9b-Q8/index.html",
+      "rank": 9,
+      "checks": {
+        "canvas_800x600": true,
+        "bricks_8x5": true,
+        "row_colors": true,
+        "controls_AD": false,
+        "space_launch_pause": false,
+        "paddle_angle": true,
+        "lives_3_wait": false,
+        "win_lose": true,
+        "screens_restart": false,
+        "hud_10": true,
+        "raf_dt": false,
+        "anti_tunnel": false
+      }
+    },
+    {
+      "model": "gemma4-E4B",
+      "score": 3.5,
+      "verdict": "fail",
+      "file": "models/gemma4-E4B/index.html",
+      "rank": 10,
+      "checks": {
+        "canvas_800x600": true,
+        "bricks_8x5": false,
+        "row_colors": true,
+        "controls_AD": true,
+        "space_launch_pause": false,
+        "paddle_angle": false,
+        "lives_3_wait": false,
+        "win_lose": true,
+        "screens_restart": false,
+        "hud_10": true,
+        "raf_dt": false,
+        "anti_tunnel": false
+      }
+    },
+    {
+      "model": "gpt-20-Q8",
+      "score": 2.5,
+      "verdict": "fail",
+      "file": "models/gpt-20-Q8/index.html",
+      "rank": 11,
+      "checks": {
+        "canvas_800x600": true,
+        "bricks_8x5": true,
+        "row_colors": true,
+        "controls_AD": true,
+        "space_launch_pause": false,
+        "paddle_angle": true,
+        "lives_3_wait": false,
+        "win_lose": false,
+        "screens_restart": true,
+        "hud_10": true,
+        "raf_dt": false,
+        "anti_tunnel": false
+      },
+      "notes": "ball never launches"
+    }
+  ]
+}

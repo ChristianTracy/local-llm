@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Breakout — Models Configurations</title>
+<style>
+  :root{--bg:#0c1118;--card:#151c27;--card2:#1a2333;--border:#232e42;--text:#e6eaf0;--muted:#8a97ad;--accent:#4f8cff;--pass:#2ecc71;--partial:#f39c12;--fail:#e74c3c;--code:#0f141e}
+  *{box-sizing:border-box} html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;line-height:1.6}
+  a{color:var(--accent);text-decoration:none} a:hover{text-decoration:underline}
+  .site-header{position:sticky;top:0;z-index:40;backdrop-filter:blur(12px) saturate(1.4);background:rgba(12,17,24,0.88);border-bottom:1px solid var(--border)}
+  .header-inner{max-width:1100px;margin:0 auto;padding:14px 20px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+  .brand{display:flex;align-items:center;gap:12px;text-decoration:none;color:var(--text)}
+  .brand:hover{text-decoration:none}
+  .brand-icon{width:38px;height:38px;display:grid;place-items:center;border-radius:10px;font-size:18px;font-weight:800;background:linear-gradient(135deg,var(--accent),#7c5cff);color:#fff;box-shadow:0 4px 16px rgba(79,140,255,0.35);flex-shrink:0}
+  .brand-text{display:flex;flex-direction:column;line-height:1.1}
+  .brand-title{font-size:16px;font-weight:800;letter-spacing:-0.3px}
+  .brand-sub{font-size:11px;color:var(--muted);margin-top:2px}
+  .tabs{display:flex;gap:6px;margin-left:auto;flex-wrap:wrap}
+  .tab{font-size:12px;font-weight:700;letter-spacing:0.2px;padding:7px 14px;border-radius:999px;border:1px solid var(--border);background:#1a2333;color:var(--muted);text-decoration:none;transition:all .15s}
+  .tab:hover{color:var(--text);border-color:#2e3d5c;background:#1e2d4a;text-decoration:none}
+  .tab.active{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 2px 10px rgba(79,140,255,0.4)}
+  .header-actions{display:flex;gap:8px;align-items:center}
+  .icon-link{font-size:11px;font-weight:600;padding:5px 9px;border-radius:999px;border:1px solid var(--border);background:transparent;color:var(--muted);text-decoration:none}
+  .icon-link:hover{color:var(--text);border-color:var(--accent);text-decoration:none}
+  main{max-width:1100px;margin:0 auto;padding:20px}
+  h2{margin:28px 0 10px;font-size:18px;border-bottom:1px solid var(--border);padding-bottom:6px}
+  h3{margin:20px 0 8px;font-size:15px;color:var(--text)}
+  p,li{font-size:13px;color:var(--text)} li{color:var(--muted)}
+  code{background:var(--code);border:1px solid var(--border);border-radius:4px;padding:1px 5px;font-size:12px}
+  pre{background:var(--code);border:1px solid var(--border);border-radius:8px;padding:12px;overflow:auto;font-size:12px}
+  table{width:100%;border-collapse:collapse;margin:12px 0;font-size:12px}
+  th,td{border:1px solid var(--border);padding:6px 8px;text-align:left} th{background:var(--card2);color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:0.4px}
+  td{color:var(--muted)} td:first-child{color:var(--text)}
+  .badge{font-size:11px;font-weight:700;padding:2px 7px;border-radius:999px;border:1px solid}
+  .badge.pass{color:var(--pass);border-color:rgba(46,204,113,0.4);background:rgba(46,204,113,0.12)}
+  .badge.partial{color:var(--partial);border-color:rgba(243,156,18,0.4);background:rgba(243,156,18,0.12)}
+  .badge.fail{color:var(--fail);border-color:rgba(231,76,60,0.4);background:rgba(231,76,60,0.12)}
+  .callout{background:rgba(79,140,255,0.08);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--muted);margin:12px 0}
+  details{background:var(--card);border:1px solid var(--border);border-radius:10px;margin:12px 0}
+  details summary{cursor:pointer;padding:12px 14px;font-size:13px;font-weight:700;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:8px}
+  details summary::-webkit-details-marker{display:none}
+  details[open] summary{border-bottom:1px solid var(--border)}
+  .sec{padding:12px 14px}
+  .hf{font-size:12px;color:var(--muted);margin:4px 0}
+  footer{max-width:1100px;margin:0 auto;padding:18px 20px 28px;color:var(--muted);font-size:11px;text-align:center;border-top:1px solid var(--border);margin-top:20px}
+</style>
+</head>
+<body>
+<header class="site-header">
+  <div class="header-inner">
+    <a class="brand" href="index.html">
+      <div class="brand-icon">◧</div>
+      <div class="brand-text">
+        <span class="brand-title">Breakout Lab</span>
+        <span class="brand-sub">Configurations · 10 tested · full resolved</span>
+      </div>
+    </a>
+    <nav class="tabs" aria-label="Primary">
+      <a class="tab" href="../index.html">⌂ Home</a>
+      <a class="tab" href="index.html">◧ Gallery</a>
+      <a class="tab" href="report.html">Report</a>
+      <a class="tab active" href="models-configurations.html">Configurations</a>
+    </nav>
+    <div class="header-actions">
+      <a class="icon-link" href="prompt.md">prompt</a>
+      <a class="icon-link" href="results.json">json</a>
+      <a class="icon-link" href="models-configurations.md">md</a>
+    </div>
+  </div>
+</header>
+<main>
+  <div class="callout">Each section is the <strong>full resolved configuration</strong> (defaults from <code>[*]</code> merged with the model section). Commented <code>;</code> lines removed. Rank order matches the Report. Paths relative to <code>models/</code>.</div>
+
+  <h2>Environment · Hardware</h2>
+  <div class="callout">Captured via <code>fastfetch</code> on the inference host.</div>
+  <table>
+    <tr><th>Component</th><th>Value</th></tr>
+    <tr><td>Host</td><td><code>A320M-HD2</code></td></tr>
+    <tr><td>OS</td><td><code>CachyOS x86_64</code> · Kernel <code>7.2.0-1-cachyos</code></td></tr>
+    <tr><td>CPU</td><td><code>AMD Ryzen 5 1600 (12) @ 3.70 GHz</code> — 6c/12t Zen 1</td></tr>
+    <tr><td>GPU</td><td><code>NVIDIA GeForce RTX 4060 Ti [Discrete]</code> (16GB)</td></tr>
+    <tr><td>Memory</td><td><code>15.53 GiB</code> + Swap <code>15.53 GiB</code></td></tr>
+    <tr><td>Disk</td><td><code>295.40 GiB btrfs</code> (221.38 — 75%)</td></tr>
+    <tr><td>Display</td><td><code>G27F 1920×1080 @ 60 Hz</code></td></tr>
+  </table>
+
+  <h2>Tested (11)</h2>
+  <table>
+    <tr><th>Rank</th><th>Breakout dir</th><th>Router section</th><th>Score</th><th>Hugging Face</th></tr>
+    <tr><td>1</td><td><a href="models/qwen3-8-RIDGE/index.html">qwen3-8-RIDGE</a></td><td><code>[qwen3.8-27b-ridge-3.7bpw]</code></td><td>9.5 <span class="badge pass">pass</span></td><td><a href="https://huggingface.co/empero-ai/Qwen3.8-27B-Ridge-GGUF">Ridge-3.7bpw</a></td></tr>
+    <tr><td>2</td><td><a href="models/qwen3-8-Q4XS/index.html">qwen3-8-Q4XS</a></td><td><code>[qwen3.8-27b-Q4XS-unsloth]</code></td><td>9.4 <span class="badge pass">pass</span></td><td><a href="https://huggingface.co/unsloth/Qwen3-30B-A3B-GGUF">Q4_XS</a></td></tr>
+    <tr><td>3</td><td><a href="models/qwen3-8-Q3S/index.html">qwen3-8-Q3S</a></td><td><code>[qwen3.8-27b-Q3S-unsloth]</code></td><td>9.3 <span class="badge pass">pass</span></td><td><a href="https://huggingface.co/unsloth/Qwen3-30B-A3B-GGUF">Q3S</a></td></tr>
+    <tr><td>4</td><td><a href="models/qwen3-8-Q2/index.html">qwen3-8-Q2</a></td><td><code>[qwen3.8-27-Q2_K_XL-unsloth]</code></td><td>9.2 <span class="badge pass">pass</span></td><td><a href="https://huggingface.co/unsloth/Qwen3-30B-A3B-GGUF">Q2_K_XL</a></td></tr>
+    <tr><td>5</td><td><a href="models/qwen3-8-Q3XL/index.html">qwen3-8-Q3XL</a></td><td><code>[qwen3.8-27b-Q3XL-unsloth]</code></td><td>9.1 <span class="badge pass">pass</span></td><td><a href="https://huggingface.co/unsloth/Qwen3-30B-A3B-GGUF">Q3XL</a></td></tr>
+    <tr><td>6</td><td><a href="models/tiel-coder-35b-IQ3_XXS/index.html">tiel-35b-IQ3_XXS</a></td><td><code>[tiel-coder-35b-IQ3_XXS]</code></td><td>7.5 <span class="badge partial">partial</span></td><td><a href="https://huggingface.co/peculiar-ragdoll/Tiel-Coder-35B-A3B-GGUF">Tiel-35B</a></td></tr>
+    <tr><td>7</td><td><a href="models/gemma4-26A4B/index.html">gemma4-26A4B</a></td><td><code>[gemma4-26B-A4B-Q4]</code></td><td>7.0 <span class="badge partial">partial</span></td><td><a href="https://huggingface.co/unsloth/gemma-4-26B-A4B-it-qat-GGUF">Gemma-26B</a></td></tr>
+    <tr><td>8</td><td><a href="models/ornith-1-5-9b/index.html">ornith-1-5-9b</a></td><td><code>[ornith-1.5-9b]</code></td><td>6.5 <span class="badge fail">fail</span></td><td><a href="https://huggingface.co/ornith-ai/Ornith-1.5-9B">Ornith-9B</a></td></tr>
+    <tr><td>9</td><td><a href="models/qwen3-5-9b-Q8/index.html">qwen3-5-9b-Q8</a></td><td><code>[qwen3.5-9b-Q8-unsloth]</code></td><td>4.0 <span class="badge fail">fail</span></td><td><a href="https://huggingface.co/unsloth/Qwen3.5-9B-GGUF">Qwen3.5-9B-GGUF</a></td></tr>
+    <tr><td>10</td><td><a href="models/gemma4-E4B/index.html">gemma4-E4B</a></td><td><code>[gemma4-E4B-Q8-uncensored]</code></td><td>3.5 <span class="badge fail">fail</span></td><td><a href="https://huggingface.co/HauhauCS/Gemma-4-E4B-Uncensored-HauhauCS-Aggressive">Gemma-E4B</a></td></tr>
+    <tr><td>11</td><td><a href="models/gpt-20-Q8/index.html">gpt-20-Q8</a></td><td><code>[gpt-20b-unsloth-Q8-UD]</code></td><td>2.5 <span class="badge fail">fail</span></td><td><a href="https://huggingface.co/unsloth/gpt-oss-20b-GGUF">gpt-oss-20b</a></td></tr>
+  </table>
+  <p style="font-size:11px;color:var(--muted)">Excluded: <code>[gpt-20b-Q5-unsloth]</code>, <code>[lfm2.5-2.6b]</code>, <code>[qwen3.5-9b-heretic-neomax-Q4]</code>, <code>[qwen3.5-9b-heretic-neomax-Q8]</code></p>
+
+  <details open>
+    <summary>1) qwen3-8-RIDGE — 9.5 pass — <code>models/qwen3-8-RIDGE/index.html</code> <span style="font-weight:400;color:var(--muted)">324 lines</span></summary>
+    <div class="sec">
+      <div class="hf">GGUF <code>qwen3.8-27b-ridge-3.7bpw/Qwen3.8-27B-Ridge-3.7bpw.gguf</code> · <a href="https://huggingface.co/empero-ai/Qwen3.8-27B-Ridge-GGUF">HF GGUF</a> · base <a href="https://huggingface.co/Qwen/Qwen3-30B-A3B">Qwen3-30B-A3B</a></div>
+      <table><tr><th>Key</th><th>Value</th></tr>
+        <tr><td><code>model</code></td><td>qwen3.8-27b-ridge-3.7bpw/Qwen3.8-27B-Ridge-3.7bpw.gguf</td></tr>
+        <tr><td><code>spec-type</code></td><td>draft-mtp</td></tr><tr><td><code>spec-draft-n-max</code></td><td>2</td></tr>
+        <tr><td><code>reasoning-effort</code></td><td>medium</td></tr><tr><td><code>reasoning-preserve</code></td><td>true</td></tr><tr><td><code>reasoning-budget</code></td><td>4096</td></tr>
+        <tr><td><code>ctx-size</code></td><td>65536</td></tr><tr><td><code>parallel</code></td><td>1</td></tr>
+        <tr><td><code>n-gpu-layers</code></td><td>99</td></tr><tr><td><code>flash-attn</code></td><td>on</td></tr>
+        <tr><td><code>cache-type-k</code></td><td>q8_0</td></tr><tr><td><code>cache-type-v</code></td><td>q8_0</td></tr>
+        <tr><td><code>batch-size</code></td><td>2048</td></tr><tr><td><code>ubatch-size</code></td><td>512</td></tr>
+        <tr><td><code>temp</code></td><td>0.6</td></tr><tr><td><code>top-p</code></td><td>0.95</td></tr><tr><td><code>top-k</code></td><td>20</td></tr><tr><td><code>min-p</code></td><td>0.0</td></tr><tr><td><code>repeat-penalty</code></td><td>1.0</td></tr><tr><td><code>presence-penalty</code></td><td>0.0</td></tr>
+      </table>
+      <pre>[qwen3.8-27b-ridge-3.7bpw]
+model              = qwen3.8-27b-ridge-3.7bpw/Qwen3.8-27B-Ridge-3.7bpw.gguf
+spec-type          = draft-mtp
+spec-draft-n-max   = 2
+reasoning-effort   = medium
+ctx-size           = 65536
+parallel           = 1
+reasoning-preserve = true
+reasoning-budget   = 4096
+top-p              = 0.95
+top-k              = 20
+min-p              = 0.0
+presence-penalty   = 0.0
+repeat-penalty     = 1.0</pre>
+    </div>
+  </details>
+
+  <details>
+    <summary>2) qwen3-8-Q4XS — 9.4 pass — <code>models/qwen3-8-Q4XS/index.html</code> <span style="font-weight:400;color:var(--muted)">309 lines</span></summary>
+    <div class="sec">
+      <div class="hf">GGUF <code>Qwen3.8-27B-UD-Q4_XS.gguf</code> · <a href="https://huggingface.co/unsloth/Qwen3-30B-A3B-GGUF">HF GGUF</a></div>
+      <table><tr><th>Key</th><th>Value</th></tr>
+        <tr><td><code>model</code></td><td>qwen3.8-27b-Q4XS-unsloth/Qwen3.8-27B-UD-Q4_XS.gguf</td></tr>
+        <tr><td><code>spec-type</code></td><td>draft-mtp</td></tr><tr><td><code>spec-draft-n-max</code></td><td>2</td></tr>
+        <tr><td><code>reasoning-effort</code></td><td>medium</td></tr><tr><td><code>reasoning-preserve</code></td><td>true</td></tr><tr><td><code>reasoning-budget</code></td><td>4096</td></tr>
+        <tr><td><code>ctx-size</code></td><td>65536</td></tr><tr><td><code>parallel</code></td><td>1</td></tr>
+        <tr><td><code>n-gpu-layers</code></td><td>99</td></tr><tr><td><code>flash-attn</code></td><td>on</td></tr><tr><td><code>cache-type-k/v</code></td><td>q8_0 / q8_0</td></tr>
+        <tr><td><code>batch/ubatch</code></td><td>2048 / 512</td></tr><tr><td><code>temp/top-p/k/min-p</code></td><td>0.6 / 0.95 / 20 / 0.0</td></tr><tr><td><code>repeat/presence</code></td><td>1.0 / 0.0</td></tr>
+      </table>
+      <pre>[qwen3.8-27b-Q4XS-unsloth]
+model              = qwen3.8-27b-Q4XS-unsloth/Qwen3.8-27B-UD-Q4_XS.gguf
+spec-type          = draft-mtp
+spec-draft-n-max   = 2
+reasoning-effort   = medium
+ctx-size           = 65536
+parallel           = 1
+reasoning-preserve = true
+reasoning-budget   = 4096
+top-p              = 0.95
+top-k              = 20
+min-p              = 0.0
+presence-penalty   = 0.0
+repeat-penalty     = 1.0</pre>
+    </div>
+  </details>
+
+  <details>
+    <summary>3) qwen3-8-Q3S — 9.3 pass — <code>models/qwen3-8-Q3S/index.html</code> <span style="font-weight:400;color:var(--muted)">342 lines</span></summary>
+    <div class="sec">
+      <div class="hf">GGUF <code>Qwen3.8-27B-UD-IQ3_S.gguf</code> · <a href="https://huggingface.co/unsloth/Qwen3-30B-A3B-GGUF">HF GGUF</a></div>
+      <table><tr><th>Key</th><th>Value</th></tr>
+        <tr><td><code>model</code></td><td>qwen3.8-27b-Q3S-unsloth/Qwen3.8-27B-UD-IQ3_S.gguf</td></tr>
+        <tr><td><code>spec-type</code></td><td>draft-mtp</td></tr><tr><td><code>spec-draft-n-max</code></td><td>2</td></tr>
+        <tr><td><code>reasoning-effort</code></td><td>medium</td></tr><tr><td><code>reasoning-preserve</code></td><td>true</td></tr><tr><td><code>reasoning-budget</code></td><td>4096</td></tr>
+        <tr><td><code>ctx-size</code></td><td>65536</td></tr><tr><td><code>parallel</code></td><td>1</td></tr>
+        <tr><td><code>n-gpu-layers</code></td><td>99</td></tr><tr><td><code>flash-attn</code></td><td>on</td></tr><tr><td><code>cache-type-k/v</code></td><td>q8_0 / q8_0</td></tr>
+        <tr><td><code>batch/ubatch</code></td><td>2048 / 512</td></tr><tr><td><code>temp/top-p/k/min-p</code></td><td>0.6 / 0.95 / 20 / 0.0</td></tr><tr><td><code>repeat/presence</code></td><td>1.0 / 0.0</td></tr>
+      </table>
+      <pre>[qwen3.8-27b-Q3S-unsloth]
+model              = qwen3.8-27b-Q3S-unsloth/Qwen3.8-27B-UD-IQ3_S.gguf
+spec-type          = draft-mtp
+spec-draft-n-max   = 2
+reasoning-effort   = medium
+ctx-size           = 65536
+parallel           = 1
+reasoning-preserve = true
+reasoning-budget   = 4096
+top-p              = 0.95
+top-k              = 20
+min-p              = 0.0
+presence-penalty   = 0.0
+repeat-penalty     = 1.0</pre>
+    </div>
+  </details>
+
+  <details>
+    <summary>4) qwen3-8-Q2 — 9.2 pass — <code>models/qwen3-8-Q2/index.html</code> <span style="font-weight:400;color:var(--muted)">278 lines · parallel 2</span></summary>
+    <div class="sec">
+      <div class="hf">GGUF <code>Qwen3.8-27B-UD-Q2_K_XL.gguf</code> · <a href="https://huggingface.co/unsloth/Qwen3-30B-A3B-GGUF">HF GGUF</a></div>
+      <table><tr><th>Key</th><th>Value</th></tr>
+        <tr><td><code>model</code></td><td>qwen3.8-27-Q2_K_XL-unsloth/Qwen3.8-27B-UD-Q2_K_XL.gguf</td></tr>
+        <tr><td><code>spec-type/draft</code></td><td>draft-mtp / 2</td></tr><tr><td><code>ctx-size</code></td><td>65536</td></tr><tr><td><code>parallel</code></td><td>2</td></tr>
+        <tr><td><code>reasoning</code></td><td>medium / true / 4096</td></tr>
+        <tr><td><code>n-gpu-layers/cache/batch</code></td><td>99 / q8_0 / 2048/512</td></tr>
+      </table>
+      <pre>[qwen3.8-27-Q2_K_XL-unsloth]
+model              = qwen3.8-27-Q2_K_XL-unsloth/Qwen3.8-27B-UD-Q2_K_XL.gguf
+spec-type          = draft-mtp
+spec-draft-n-max   = 2
+reasoning-effort   = medium
+ctx-size           = 65536
+parallel           = 2
+reasoning-preserve = true
+reasoning-budget   = 4096
+top-p              = 0.95
+top-k              = 20
+min-p              = 0.0
+presence-penalty   = 0.0
+repeat-penalty     = 1.0</pre>
+    </div>
+  </details>
+
+  <details>
+    <summary>5) qwen3-8-Q3XL — 9.1 pass — <code>models/qwen3-8-Q3XL/index.html</code> <span style="font-weight:400;color:var(--muted)">342 lines · ctx 32768</span></summary>
+    <div class="sec">
+      <div class="hf">GGUF <code>Qwen3.8-27B-UD-Q3_K_XL.gguf</code> · <a href="https://huggingface.co/unsloth/Qwen3-30B-A3B-GGUF">HF GGUF</a></div>
+      <table><tr><th>Key</th><th>Value</th></tr>
+        <tr><td><code>model</code></td><td>qwen3.8-27b-Q3XL-unsloth/Qwen3.8-27B-UD-Q3_K_XL.gguf</td></tr>
+        <tr><td><code>ctx-size</code></td><td>32768</td></tr><tr><td><code>batch-size</code></td><td>1024</td></tr><tr><td><code>reasoning-budget</code></td><td>5000</td></tr>
+        <tr><td><code>spec-type/draft</code></td><td>draft-mtp / 2</td></tr><tr><td><code>parallel</code></td><td>1</td></tr>
+      </table>
+      <pre>[qwen3.8-27b-Q3XL-unsloth]
+model              = qwen3.8-27b-Q3XL-unsloth/Qwen3.8-27B-UD-Q3_K_XL.gguf
+spec-type          = draft-mtp
+spec-draft-n-max   = 2
+ctx-size           = 32768
+batch-size         = 1024
+reasoning-preserve = true
+reasoning-effort   = medium
+reasoning-budget   = 5000</pre>
+    </div>
+  </details>
+
+  <details>
+    <summary>6) tiel-coder-35b-IQ3_XXS — 7.5 partial — 465 lines</summary>
+    <div class="sec">
+      <div class="hf">GGUF <code>Tiel-Coder-35B-A3B-UD-IQ3_XXS.gguf</code> · <a href="https://huggingface.co/peculiar-ragdoll/Tiel-Coder-35B-A3B-GGUF">HF base</a></div>
+      <table><tr><th>Key</th><th>Value</th></tr>
+        <tr><td><code>model</code></td><td>tiel-coder-35b-IQ3_XXS/Tiel-Coder-35B-A3B-UD-IQ3_XXS.gguf</td></tr>
+        <tr><td><code>mmproj</code></td><td>tiel-coder-35b-IQ3_XXS/mmproj-BF16.gguf</td></tr>
+        <tr><td><code>ctx-size</code></td><td>131072</td></tr><tr><td><code>jinja</code></td><td>true</td></tr>
+        <tr><td><code>n-gpu-layers/cache/batch</code></td><td>99 / q8_0 / 2048/512</td></tr>
+      </table>
+      <pre>[tiel-coder-35b-IQ3_XXS]
+model              = tiel-coder-35b-IQ3_XXS/Tiel-Coder-35B-A3B-UD-IQ3_XXS.gguf
+mmproj             = tiel-coder-35b-IQ3_XXS/mmproj-BF16.gguf
+ctx-size           = 131072
+jinja              = true
+reasoning-preserve = true
+reasoning-budget   = 4096</pre>
+    </div>
+  </details>
+
+  <details>
+    <summary>7) gemma4-26A4B — 7.0 partial — n-gpu 26, draft 4</summary>
+    <div class="sec">
+      <div class="hf">GGUF <code>gemma-4-26B-A4B-it-qat-UD-Q4_K_XL.gguf</code> · base <a href="https://huggingface.co/unsloth/gemma-4-26B-A4B-it-qat-GGUF">unsloth/gemma-4-26B-A4B-it-qat-GGUF</a></div>
+      <table><tr><th>Key</th><th>Value</th></tr>
+        <tr><td><code>model</code></td><td>gemma-4-26B-A4B-it-qat-UD-Q4_K_XL.gguf</td></tr>
+        <tr><td><code>mmproj</code></td><td>mmproj-F16.gguf</td></tr><tr><td><code>model-draft</code></td><td>mtp-gemma-4-26B-A4B-it.gguf</td></tr>
+        <tr><td><code>spec-type/draft</code></td><td>draft-mtp / 4</td></tr><tr><td><code>n-gpu-layers</code></td><td>26</td></tr><tr><td><code>top-k</code></td><td>64</td></tr>
+      </table>
+      <pre>[gemma4-26B-A4B-Q4]
+model            = gemma4-26B-A4B-Q4/gemma-4-26B-A4B-it-qat-UD-Q4_K_XL.gguf
+mmproj           = gemma4-26B-A4B-Q4/mmproj-F16.gguf
+model-draft      = gemma4-26B-A4B-Q4/mtp-gemma-4-26B-A4B-it.gguf
+spec-type        = draft-mtp
+spec-draft-n-max = 4
+n-gpu-layers     = 26
+ctx-size         = 65536
+jinja            = true
+top-k            = 64</pre>
+    </div>
+  </details>
+
+  <details>
+    <summary>8) ornith-1-5-9b — 6.5 fail — presence 1.5</summary>
+    <div class="sec">
+      <div class="hf"><a href="https://huggingface.co/ornith-ai/Ornith-1.5-9B">Ornith-1.5-9B</a></div>
+      <table><tr><th>Key</th><th>Value</th></tr>
+        <tr><td><code>model</code></td><td>Ornith-1.5-9B-Q8_0.gguf</td></tr><tr><td><code>mmproj</code></td><td>mmproj-Ornith-1.5-9B-BF16.gguf</td></tr>
+        <tr><td><code>presence-penalty</code></td><td>1.5</td></tr><tr><td><code>ctx-size</code></td><td>131072</td></tr>
+      </table>
+      <pre>[ornith-1.5-9b]
+model              = ornith-1.5-9b/Ornith-1.5-9B-Q8_0.gguf
+mmproj             = ornith-1.5-9b/mmproj-Ornith-1.5-9B-BF16.gguf
+ctx-size           = 131072
+reasoning-preserve = true
+reasoning-budget   = 4096
+presence-penalty   = 1.5</pre>
+    </div>
+  </details>
+
+  <details>
+    <summary>9) qwen3-5-9b-Q8 — 4.0 fail — MTP-3</summary>
+    <div class="sec">
+      <div class="hf"><a href="https://huggingface.co/unsloth/Qwen3.5-9B-GGUF">Qwen3.5-9B-GGUF</a> · <a href="https://huggingface.co/unsloth/Qwen3.5-9B-GGUF">GGUF</a></div>
+      <table><tr><th>Key</th><th>Value</th></tr>
+        <tr><td><code>model</code></td><td>Qwen3.5-9B-Q8_0.gguf</td></tr><tr><td><code>spec-type/draft</code></td><td>draft-mtp / 3</td></tr><tr><td><code>ctx-size</code></td><td>131072</td></tr>
+      </table>
+      <pre>[qwen3.5-9b-Q8-unsloth]
+model              = qwen3.5-9b-Q8-unsloth/Qwen3.5-9B-Q8_0.gguf
+ctx-size           = 131072
+spec-type          = draft-mtp
+spec-draft-n-max   = 3
+reasoning-preserve = true
+reasoning-budget   = 4096</pre>
+    </div>
+  </details>
+
+  <details>
+    <summary>10) gemma4-E4B — 3.5 fail — top-k 64</summary>
+    <div class="sec">
+      <div class="hf"><a href="https://huggingface.co/HauhauCS/Gemma-4-E4B-Uncensored-HauhauCS-Aggressive">HauhauCS/Gemma-4-E4B-Uncensored</a></div>
+      <table><tr><th>Key</th><th>Value</th></tr>
+        <tr><td><code>model</code></td><td>Gemma-4-E4B-Uncensored-Q8_K_P.gguf</td></tr><tr><td><code>mmproj</code></td><td>mmproj-Gemma-4-E4B-Uncensored-f16.gguf</td></tr>
+        <tr><td><code>top-k</code></td><td>64</td></tr><tr><td><code>ctx-size</code></td><td>65536</td></tr>
+      </table>
+      <pre>[gemma4-E4B-Q8-uncensored]
+model       = gemma4-E4B-Q8-uncensored/Gemma-4-E4B-Uncensored-HauhauCS-Aggressive-Q8_K_P.gguf
+mmproj      = gemma4-E4B-Q8-uncensored/mmproj-Gemma-4-E4B-Uncensored-HauhauCS-Aggressive-f16.gguf
+ctx-size    = 65536
+jinja       = true
+top-k       = 64</pre>
+    </div>
+  </details>
+
+  <details>
+    <summary>11) gpt-20-Q8 — 2.5 fail — ctx 131072</summary>
+    <div class="sec">
+      <div class="hf"><a href="https://huggingface.co/unsloth/gpt-oss-20b-GGUF">unsloth/gpt-oss-20b-GGUF</a></div>
+      <table><tr><th>Key</th><th>Value</th></tr>
+        <tr><td><code>model</code></td><td>gpt-oss-20b-UD-Q8_K_XL.gguf</td></tr><tr><td><code>ctx-size</code></td><td>131072</td></tr><tr><td><code>jinja</code></td><td>true</td></tr><tr><td><code>reasoning-effort</code></td><td>medium</td></tr>
+      </table>
+      <pre>[gpt-20b-unsloth-Q8-UD]
+model            = gpt-20b-unsloth-Q8-UD/gpt-oss-20b-UD-Q8_K_XL.gguf
+ctx-size         = 131072
+jinja            = true
+reasoning-effort = medium</pre>
+    </div>
+  </details>
+
+</main>
+<footer>Full resolved configs — commented lines filtered · Host: A320M-HD2 · RTX 4060 Ti + R5 1600</footer>
+</body>
+</html>

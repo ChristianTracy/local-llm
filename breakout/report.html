@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Breakout — Model Comparison Report</title>
+<style>
+  :root{--bg:#0c1118;--card:#151c27;--card2:#1a2333;--border:#232e42;--text:#e6eaf0;--muted:#8a97ad;--accent:#4f8cff;--pass:#2ecc71;--partial:#f39c12;--fail:#e74c3c;--code:#0f141e}
+  *{box-sizing:border-box} html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,ui-monospace,SFMono-Regular,Menlo,monospace;line-height:1.65}
+  a{color:var(--accent);text-decoration:none} a:hover{text-decoration:underline}
+  .site-header{position:sticky;top:0;z-index:40;backdrop-filter:blur(12px) saturate(1.4);background:rgba(12,17,24,0.88);border-bottom:1px solid var(--border)}
+  .header-inner{max-width:1080px;margin:0 auto;padding:14px 20px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+  .brand{display:flex;align-items:center;gap:12px;text-decoration:none;color:var(--text)}
+  .brand-icon{width:38px;height:38px;display:grid;place-items:center;border-radius:10px;font-size:18px;font-weight:800;background:linear-gradient(135deg,var(--accent),#7c5cff);color:#fff;box-shadow:0 4px 16px rgba(79,140,255,0.35);flex-shrink:0}
+  .brand-text{display:flex;flex-direction:column;line-height:1.1}
+  .brand-title{font-size:16px;font-weight:800;letter-spacing:-0.3px}
+  .brand-sub{font-size:11px;color:var(--muted);margin-top:2px}
+  .tabs{display:flex;gap:6px;margin-left:auto;flex-wrap:wrap}
+  .tab{font-size:12px;font-weight:700;letter-spacing:0.2px;padding:7px 14px;border-radius:999px;border:1px solid var(--border);background:#1a2333;color:var(--muted);text-decoration:none;transition:all .15s}
+  .tab:hover{color:var(--text);border-color:#2e3d5c;background:#1e2d4a;text-decoration:none}
+  .tab.active{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 2px 10px rgba(79,140,255,0.4)}
+  .header-actions{display:flex;gap:8px;align-items:center}
+  .icon-link{font-size:11px;font-weight:600;padding:5px 9px;border-radius:999px;border:1px solid var(--border);background:transparent;color:var(--muted);text-decoration:none}
+  .icon-link:hover{color:var(--text);border-color:var(--accent);text-decoration:none}
+  main{max-width:1080px;margin:0 auto;padding:20px}
+  .lead{color:var(--muted);font-size:13px;margin:8px 0 0}
+  .toc{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin:16px 0}
+  .toc strong{font-size:12px;letter-spacing:0.4px;text-transform:uppercase;color:var(--muted)}
+  .toc ol{margin:8px 0 0 18px;padding:0;font-size:13px}
+  .toc li{margin:4px 0;color:var(--muted)} .toc a{color:var(--text)}
+  h2{margin:32px 0 12px;font-size:19px;letter-spacing:-0.2px;border-bottom:1px solid var(--border);padding-bottom:8px}
+  h3{margin:20px 0 8px;font-size:15px;color:var(--text)} h4{margin:16px 0 6px;font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px}
+  p{font-size:13.5px;color:var(--text);margin:8px 0}
+  .muted{color:var(--muted)}
+  code{background:var(--code);border:1px solid var(--border);border-radius:5px;padding:1px 6px;font-size:12px}
+  pre{background:var(--code);border:1px solid var(--border);border-radius:8px;padding:12px;overflow:auto;font-size:12px}
+  table{width:100%;border-collapse:collapse;margin:14px 0;font-size:12.5px}
+  th,td{border:1px solid var(--border);padding:7px 9px;text-align:left} th{background:var(--card2);color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:0.4px}
+  td{color:var(--muted)} td:first-child{color:var(--text)} td strong{color:var(--text)}
+  .badge{font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;border:1px solid}
+  .badge.pass{color:var(--pass);border-color:rgba(46,204,113,0.4);background:rgba(46,204,113,0.12)}
+  .badge.partial{color:var(--partial);border-color:rgba(243,156,18,0.4);background:rgba(243,156,18,0.12)}
+  .badge.fail{color:var(--fail);border-color:rgba(231,76,60,0.4);background:rgba(231,76,60,0.12)}
+  .callout{background:rgba(79,140,255,0.08);border:1px solid var(--border);border-radius:10px;padding:11px 13px;font-size:12.5px;color:var(--muted);margin:12px 0;line-height:1.6}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px} @media(max-width:700px){.grid2{grid-template-columns:1fr}}
+  .kpi{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px}
+  .kpi .n{font-size:22px;font-weight:800;color:var(--text)} .kpi .l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-top:2px}
+  .tier{border-left:3px solid var(--border);padding-left:12px;margin:14px 0}
+  .tier.t1{border-color:var(--pass)} .tier.t2{border-color:var(--partial)} .tier.t3{border-color:var(--fail)}
+  footer{max-width:1080px;margin:0 auto;padding:18px 20px 28px;color:var(--muted);font-size:11px;text-align:center;border-top:1px solid var(--border);margin-top:20px}
+</style>
+</head>
+<body>
+<header class="site-header">
+  <div class="header-inner">
+    <a class="brand" href="index.html">
+      <div class="brand-icon">◧</div>
+      <div class="brand-text">
+        <span class="brand-title">Breakout Lab</span>
+        <span class="brand-sub">Report · 11 models · 2026-09-02</span>
+      </div>
+    </a>
+    <nav class="tabs" aria-label="Primary">
+      <a class="tab" href="../index.html">⌂ Home</a>
+      <a class="tab" href="index.html">◧ Gallery</a>
+      <a class="tab active" href="report.html">Report</a>
+      <a class="tab" href="models-configurations.html">Configurations</a>
+    </nav>
+    <div class="header-actions">
+      <a class="icon-link" href="prompt.md">prompt</a>
+      <a class="icon-link" href="results.json">json</a>
+      <a class="icon-link" href="report.md">md</a>
+    </div>
+  </div>
+</header>
+<main>
+  <p class="lead">Single-file <code>800×600</code> Breakout (Canvas + <code>requestAnimationFrame</code> + <code>deltaTime</code>). Static review only — no browser run.</p>
+
+  <div class="toc">
+    <strong>Contents</strong>
+    <ol>
+      <li><a href="#ranking">Ranking — TL;DR</a></li>
+      <li><a href="#tested">How This Was Tested</a></li>
+      <li><a href="#rubric">Scoring Rubric</a></li>
+      <li><a href="#matrix">Compliance Matrix</a></li>
+      <li><a href="#breakdown">Detailed Breakdown</a></li>
+      <li><a href="#env">Environment · Hardware</a></li>
+    </ol>
+  </div>
+
+  <div class="grid2">
+    <div class="kpi"><div class="n">5 / 11 pass</div><div class="l">Fully compliant — RIDGE, Q4XS, Q3S, Q2, Q3XL</div></div>
+    <div class="kpi"><div class="n">324 lines</div><div class="l">Reference (RIDGE) · smallest 244 (gpt-20) · largest 465 (tiel)</div></div>
+  </div>
+
+  <h2 id="ranking">TL;DR — Ranking</h2>
+  <table>
+    <tr><th>Rank</th><th>Model</th><th>Score</th><th>Verdict</th><th>File</th><th>LOC</th></tr>
+    <tr><td><strong>1</strong></td><td><strong>qwen3-8-RIDGE</strong></td><td><strong>9.5</strong></td><td><span class="badge pass">✓ pass</span></td><td><a href="models/qwen3-8-RIDGE/index.html">models/qwen3-8-RIDGE/index.html</a></td><td>324</td></tr>
+    <tr><td><strong>2</strong></td><td><strong>qwen3-8-Q4XS</strong></td><td><strong>9.4</strong></td><td><span class="badge pass">✓ pass</span></td><td><a href="models/qwen3-8-Q4XS/index.html">models/qwen3-8-Q4XS/index.html</a></td><td>309</td></tr>
+    <tr><td><strong>3</strong></td><td><strong>qwen3-8-Q3S</strong></td><td><strong>9.3</strong></td><td><span class="badge pass">✓ pass</span></td><td><a href="models/qwen3-8-Q3S/index.html">models/qwen3-8-Q3S/index.html</a></td><td>342</td></tr>
+    <tr><td><strong>4</strong></td><td><strong>qwen3-8-Q2</strong></td><td><strong>9.2</strong></td><td><span class="badge pass">✓ pass</span></td><td><a href="models/qwen3-8-Q2/index.html">models/qwen3-8-Q2/index.html</a></td><td>278</td></tr>
+    <tr><td><strong>5</strong></td><td><strong>qwen3-8-Q3XL</strong></td><td><strong>9.1</strong></td><td><span class="badge pass">✓ pass</span></td><td><a href="models/qwen3-8-Q3XL/index.html">models/qwen3-8-Q3XL/index.html</a></td><td>342</td></tr>
+    <tr><td>6</td><td>tiel-coder-35b-IQ3_XXS</td><td>7.5</td><td><span class="badge partial">⚠ partial</span></td><td><a href="models/tiel-coder-35b-IQ3_XXS/index.html">models/tiel-coder-35b-IQ3_XXS/index.html</a></td><td>465</td></tr>
+    <tr><td>7</td><td>gemma4-26A4B</td><td>7.0</td><td><span class="badge partial">⚠ partial</span></td><td><a href="models/gemma4-26A4B/index.html">models/gemma4-26A4B/index.html</a></td><td>337</td></tr>
+    <tr><td>8</td><td>ornith-1-5-9b</td><td>6.5</td><td><span class="badge fail">✕ fail</span></td><td><a href="models/ornith-1-5-9b/index.html">models/ornith-1-5-9b/index.html</a></td><td>442</td></tr>
+    <tr><td>9</td><td>qwen3-5-9b-Q8</td><td>4.0</td><td><span class="badge fail">✕ fail</span></td><td><a href="models/qwen3-5-9b-Q8/index.html">models/qwen3-5-9b-Q8/index.html</a></td><td>385</td></tr>
+    <tr><td>10</td><td>gemma4-E4B</td><td>3.5</td><td><span class="badge fail">✕ fail</span></td><td><a href="models/gemma4-E4B/index.html">models/gemma4-E4B/index.html</a></td><td>426</td></tr>
+    <tr><td>11</td><td>gpt-20-Q8</td><td>2.5</td><td><span class="badge fail">✕ fail</span></td><td><a href="models/gpt-20-Q8/index.html">models/gpt-20-Q8/index.html</a></td><td>244</td></tr>
+  </table>
+  <div class="callout"><strong>Takeaway:</strong> <code>ornith</code> would be #1 with one fix. Use <code>qwen3-8-RIDGE</code> as reference — new <code>Q4XS</code> (9.4) is the closest challenger, <code>Q3S/Q2/Q3XL</code> remain drop-ins.</div>
+
+  <h2 id="tested">How This Was Tested</h2>
+  <p><strong>Static analysis only</strong> — <code>grep</code> + <code>read</code>, no headless browser.</p>
+  <table>
+    <tr><th>What was checked</th><th>How</th></tr>
+    <tr><td>Canvas <code>800×600</code></td><td><code>width="800" height="600"</code></td></tr>
+    <tr><td>Single file, no <code>src</code> / <code>&lt;img&gt;</code> / <code>TODO</code></td><td><code>grep &lt;script src / &lt;img / TODO</code></td></tr>
+    <tr><td><code>rAF</code> + <code>deltaTime</code></td><td><code>requestAnimationFrame</code> + <code>dt</code> + clamp</td></tr>
+    <tr><td>8×5 bricks + row colors</td><td><code>COLS/ROWS</code> + <code>ROW_COLORS</code></td></tr>
+    <tr><td>Controls</td><td><code>ArrowLeft / KeyA / Space</code> + state trace</td></tr>
+    <tr><td>Paddle angle</td><td><code>relative*π/3</code> + <code>Math.sin/cos</code></td></tr>
+    <tr><td>Lives &amp; reset</td><td><code>lives--</code> → <code>resetBall</code></td></tr>
+    <tr><td>Win/lose + screens</td><td><code>every(!alive)</code> + <code>click</code></td></tr>
+    <tr><td>HUD</td><td><code>Score / Lives</code> + <code>+=10</code></td></tr>
+  </table>
+  <div class="callout">Runtime check not done: open <code>file://</code> in Chrome, press <code>Space</code>/<code>←</code>, assert <code>y&gt;H</code> loses a life and 40 bricks → victory.</div>
+
+  <h2 id="rubric">Scoring Rubric</h2>
+  <p><code>10</code> = perfect. <code>−2</code> unplayable · <code>−1.5</code> broken <code>dt</code> · <code>−1</code> missing pause/wait/physics · <code>−0.5</code> visual.</p>
+  <p class="muted" style="font-size:12px">Gallery adds <strong>func</strong> / <strong>quality</strong> / <strong>LOC</strong> per card. Overall score is weighted (functionality-heavy).</p>
+
+  <h2 id="matrix">Compliance Matrix</h2>
+  <div class="callout" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+    <span><span class="badge pass">✓ pass</span> meets spec</span>
+    <span><span class="badge partial">⚠ partial</span> minor deviation, still playable</span>
+    <span><span class="badge fail">✕ fail</span> breaks spec</span>
+    <span style="font-size:11px;color:var(--muted)">➖ clamp = dt capped only &nbsp;·&nbsp; ✅ sub = sub-stepped (no tunneling)</span>
+  </div>
+  <p class="muted" style="font-size:11px;margin-bottom:0">Columns: <code>RIDGE</code>=qwen3-8-RIDGE · <code>Q4XS</code>=qwen3-8-Q4XS · <code>Q3S</code>=qwen3-8-Q3S · <code>Q2</code>=qwen3-8-Q2 · <code>Q3XL</code>=qwen3-8-Q3XL · <code>tiel</code>=tiel-coder-35b · <code>g26A</code>=gemma4-26A4B · <code>ornith</code>=ornith-1.5-9b · <code>Q5-9b</code>=qwen3-5-9b-Q8 · <code>gE4B</code>=gemma4-E4B · <code>gpt20</code>=gpt-20-Q8</p>
+  <table>
+    <tr><th>Criterion (from prompt)</th><th>RIDGE</th><th>Q4XS</th><th>Q3S</th><th>Q2</th><th>Q3XL</th><th>tiel</th><th>g26A</th><th>ornith</th><th>Q5-9b</th><th>gE4B</th><th>gpt20</th></tr>
+    <tr><td>800×600 canvas</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
+    <tr><td>8×5 bricks</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>⚠<span style="font-size:10px;color:var(--partial)"> *</span></td><td>✓</td><td>✓</td><td>⚠<span style="font-size:10px;color:var(--partial)"> †</span></td><td>✓</td></tr>
+    <tr><td>Row colors (5)</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
+    <tr><td>←→ / A-D</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✕</td><td>✓</td><td>✓</td></tr>
+    <tr><td>Space: launch + pause</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✕</td><td>⚠<span style="font-size:10px;color:var(--partial)"> ‡</span></td><td>✓</td><td>✕</td><td>✕</td><td>✕</td></tr>
+    <tr><td>Paddle angle (±60°)</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✕</td><td>✓</td></tr>
+    <tr><td>3 lives + wait</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✕<span style="font-size:10px;color:var(--fail)"> §</span></td><td>✕</td><td>✕</td><td>✕</td></tr>
+    <tr><td>Win / lose</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✕<span style="font-size:10px;color:var(--fail)"> §</span></td><td>✓</td><td>✓</td><td>✕</td></tr>
+    <tr><td>4 screens + restart</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>⚠</td><td>✓</td><td>⚠</td><td>⚠</td><td>✓</td></tr>
+    <tr><td>HUD: 10 pts + lives</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✕<span style="font-size:10px;color:var(--fail)"> ¶</span></td><td>✓</td><td>✓</td><td>✓</td></tr>
+    <tr><td>rAF + deltaTime</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✕</td><td>✕</td><td>⚠</td></tr>
+    <tr><td>Anti-tunneling <span title="Prevents fast ball from passing through bricks between frames" style="cursor:help;border-bottom:1px dotted var(--muted)">ⓘ</span></td><td>✅ sub</td><td>✅ sub</td><td>✅ sub</td><td>➖ clamp</td><td>➖</td><td>➖</td><td>➖</td><td>➖</td><td>✕</td><td>✕</td><td>✕</td></tr>
+  </table>
+  <div class="callout" style="background:rgba(255,255,255,0.03)">
+    <strong>What is “Anti-tunneling”?</strong> At high speed the ball can skip over a brick between frames (“tunnel”). <code>✅ sub</code> splits movement into tiny sub-steps (<code>ceil(speed*dt / (radius/2))</code>) and checks collision each step — no tunneling. <code>➖ clamp</code> only caps <code>dt</code> to <code>0.05</code> — safe at normal speed but can still tunnel if very fast. <code>✕</code> = no protection.
+  </div>
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin:10px 0">
+    <strong style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:0.4px">Footnotes — plain language</strong>
+    <ul style="margin:8px 0 0 16px;padding:0;font-size:12px;line-height:1.6;color:var(--muted)">
+      <li><strong style="color:var(--partial)">*</strong> <strong>gemma4-26A4B</strong> — Brick width calculation ignores gap/padding, so 8 bricks overflow the 800 px canvas.</li>
+      <li><strong style="color:var(--partial)">†</strong> <strong>gemma4-E4B</strong> — Brick width <code>(800-10)/8</code> totals 880 px → bricks are clipped off-screen.</li>
+      <li><strong style="color:var(--partial)">‡</strong> <strong>gemma4-26A4B</strong> — Pressing Space while paused calls <code>launch()</code> instead of resuming, resetting ball direction.</li>
+      <li><strong style="color:var(--fail)">§</strong> <strong>ornith-1.5-9b</strong> — <code>checkBallFell()</code> / <code>loseLife()</code> exist but are never called in <code>update()</code>, so the ball falling never costs a life — you can never lose.</li>
+      <li><strong style="color:var(--fail)">¶</strong> <strong>ornith-1.5-9b</strong> — Score is <code>10 * (5 - row)</code> (10–50 per brick) instead of the spec’s flat <code>10</code> per brick.</li>
+    </ul>
+  </div>
+
+  <h2 id="breakdown">Detailed Breakdown</h2>
+
+  <div class="tier t1">
+    <h3>Tier 1 — Fully Compliant</h3>
+    <h4>1) qwen3-8-RIDGE — 9.5 · 324 lines</h4>
+    <p><strong>Why #1:</strong> Only impl with clamped rAF + sub-step tunnel fix + separate <code>ready</code> state. <code>MAX_DT 0.033</code>, <code>BRICK_MARGIN</code> with gap, 5 colors, Space exact, paddle <code>hit*π/3</code>, 5 screens + click/any-key. <strong>No bugs.</strong></p>
+    <h4>2) qwen3-8-Q4XS — 9.4 · 309 lines — NEW</h4>
+    <p>Clamp <code>0.05</code> + fine sub-step <code>(SPEED*dt)/(R/2)</code>, correct <code>BRICK_W</code> with margin/gap, 5 row colors. Paddle <code>rel*π/3</code>, overlap brick bounce, lives <code>resetBall</code> + <code>stuck</code> wait, <code>paused</code> flag. Needs two Spaces from START (stuck) — minor vs RIDGE one.</p>
+    <h4>3) qwen3-8-Q3S — 9.3 · 342 lines</h4>
+    <p>Clamp <code>0.05</code> + sub-step, Space correct, paddle <code>rel*π/3</code>. Minor: <code>WIN</code> vs <code>victory</code>.</p>
+    <h4>4) qwen3-8-Q2 — 9.2 · 278 lines</h4>
+    <p><code>vx*dt</code>, clamp <code>0.05</code>, <code>stuck=true</code>. No sub-step but <code>21 &lt; 24</code> safe. Most compact.</p>
+    <h4>5) qwen3-8-Q3XL — 9.1 · 342 lines</h4>
+    <p>Clamp, angle <code>−π/2+rel*π/3</code>, launch <code>±π/6</code>.</p>
+  </div>
+
+  <div class="tier t2">
+    <h3>Tier 2 — Playable</h3>
+    <h4>6) tiel-coder-35b — 7.5 · 465 lines</h4>
+    <p>Space never pauses during play. Otherwise solid. Largest (extra <code>mousemove</code>).</p>
+    <h4>7) gemma4-26A4B — 7.0 · 337 lines</h4>
+    <p>Clamp ok, brickW overflow, <code>PAUSED→launch()</code> overwrites dir.</p>
+    <h4>8) ornith-1.5-9b — 6.5 · 442 lines</h4>
+    <p><strong>Best code, one-line bug:</strong> <code>checkBallFell()</code> never called → can't lose. Weighted score wrong.</p>
+  </div>
+
+  <div class="tier t3">
+    <h3>Tier 3 — Broken</h3>
+    <h4>9) qwen3-5-9b — 4.0 · 385 lines</h4>
+    <p>No <code>dt</code>, paddle only on <code>keydown</code>, no pause.</p>
+    <h4>10) gemma4-E4B — 3.5 · 426 lines</h4>
+    <p>Faux <code>dt</code>, inverted paddle angle, no pause, 880&gt;800 bricks.</p>
+    <h4>11) gpt-20-Q8 — 2.5 · 244 lines</h4>
+    <p>No clamp, dead Space code → <strong>ball never moves</strong>.</p>
+  </div>
+
+  <h2 id="env">Environment · Hardware</h2>
+  <div class="callout">Captured via <code>fastfetch</code> on the inference host.</div>
+  <table>
+    <tr><th>Component</th><th>Value</th></tr>
+    <tr><td>Host</td><td><code>A320M-HD2</code></td></tr>
+    <tr><td>OS</td><td><code>CachyOS x86_64</code> · Kernel <code>7.2.0-1-cachyos</code></td></tr>
+    <tr><td>CPU</td><td><code>AMD Ryzen 5 1600 (12) @ 3.70 GHz</code> — 6c/12t Zen 1</td></tr>
+    <tr><td>GPU</td><td><code>NVIDIA GeForce RTX 4060 Ti [Discrete]</code> (16GB)</td></tr>
+    <tr><td>Memory</td><td><code>15.53 GiB</code> + Swap <code>15.53 GiB</code></td></tr>
+    <tr><td>Disk</td><td><code>295.40 GiB btrfs</code> (221.38 — 75%)</td></tr>
+    <tr><td>Display</td><td><code>G27F 1920×1080 @ 60 Hz</code></td></tr>
+    <tr><td>Shell</td><td><code>fish 4.8.1</code> · <code>10.5p1</code> · Uptime <code>2h 7m</code></td></tr>
+    <tr><td>Packages</td><td><code>1404 pacman + 11 flatpak</code></td></tr>
+  </table>
+  <p class="muted" style="font-size:11px">16GB VRAM → <code>n-gpu-layers 26</code> + heavy quants; Zen 1 → <code>draft-mtp 2–4</code>. Results for <strong>RTX 4060 Ti 16GB + R5 1600</strong>.</p>
+</main>
+<footer>Generated from <code>report.md</code></footer>
+</body>
+</html>

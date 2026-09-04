@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Local LLM Lab — Breakout Benchmarks</title>
+<style>
+  :root {
+    --bg: #0c1118;
+    --card: #151c27;
+    --card-border: #232e42;
+    --text: #e6eaf0;
+    --muted: #8a97ad;
+    --accent: #4f8cff;
+    --pass: #2ecc71;
+    --partial: #f39c12;
+    --fail: #e74c3c;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .site-header{
+    position:sticky; top:0; z-index:40;
+    backdrop-filter: blur(12px) saturate(1.4);
+    background: rgba(12,17,24,0.88);
+    border-bottom:1px solid var(--card-border);
+  }
+  .header-inner{
+    max-width:1280px; margin:0 auto; padding:14px 20px;
+    display:flex; align-items:center; gap:18px; flex-wrap:wrap;
+  }
+  .brand{display:flex; align-items:center; gap:12px; text-decoration:none; color:var(--text)}
+  .brand:hover{text-decoration:none}
+  .brand-icon{
+    width:38px; height:38px; display:grid; place-items:center;
+    border-radius:10px;
+    background: linear-gradient(135deg,var(--accent),#7c5cff);
+    box-shadow:0 4px 16px rgba(79,140,255,0.35);
+    flex-shrink:0; overflow:hidden;
+  }
+  .brand-icon svg{ width:26px; height:26px; display:block; shape-rendering:crispEdges; }
+  .brand-text{display:flex; flex-direction:column; line-height:1.1}
+  .brand-title{font-size:16px; font-weight:800; letter-spacing:-0.3px}
+  .brand-sub{font-size:11px; color:var(--muted); margin-top:2px}
+  .tabs{display:flex; gap:6px; margin-left:auto; flex-wrap:wrap}
+  .tab{
+    font-size:12px; font-weight:700; letter-spacing:0.2px;
+    padding:7px 14px; border-radius:999px;
+    border:1px solid var(--card-border); background:#1a2333; color:var(--muted);
+    text-decoration:none; transition:all .15s;
+  }
+  .tab:hover{color:var(--text); border-color:#2e3d5c; background:#1e2d4a; text-decoration:none}
+  .tab.active{background:var(--accent); border-color:var(--accent); color:#fff; box-shadow:0 2px 10px rgba(79,140,255,0.4)}
+  .header-actions{display:flex; gap:8px; align-items:center}
+  .icon-link{font-size:11px; font-weight:600; padding:5px 9px; border-radius:999px; border:1px solid var(--card-border); background:transparent; color:var(--muted); text-decoration:none}
+  .icon-link:hover{color:var(--text); border-color:var(--accent); text-decoration:none}
+  .subbar{
+    max-width:1280px; margin:0 auto; padding:10px 20px 12px;
+    color:var(--muted); font-size:12px; line-height:1.5;
+    border-bottom:1px solid var(--card-border);
+  }
+  .subbar code{background:#0f141e;border:1px solid var(--card-border);border-radius:4px;padding:1px 5px;font-size:11px}
+  main { max-width: 1280px; margin: 0 auto; padding: 20px; display:flex; flex-direction:column; gap:20px; }
+  .grid-suites { display:grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap:20px; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  .card-head {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    padding: 12px 14px; gap: 8px;
+    border-bottom: 1px solid var(--card-border);
+    background: rgba(255,255,255,0.02);
+  }
+  .card-head-left { display:flex; align-items:flex-start; gap:10px; min-width:0; flex:1 }
+  .rank {
+    width: 38px; height: 38px; flex-shrink: 0;
+    display: grid; place-items:center;
+    border-radius: 10px; overflow:hidden;
+    background: linear-gradient(135deg,var(--accent),#7c5cff); color:#fff;
+    box-shadow:0 4px 16px rgba(79,140,255,0.35);
+  }
+  .rank svg{ width:26px; height:26px; display:block; shape-rendering:crispEdges; }
+  .model-meta{display:flex; flex-direction:column; min-width:0; line-height:1.25; flex:1}
+  .model-name { font-size: 14px; font-weight: 800; }
+  .family{font-size:11px; color:var(--muted); line-height:1.5; margin-top:4px}
+  .badge {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase;
+    padding: 3px 7px; border-radius: 999px; border: 1px solid;
+    white-space:nowrap;
+  }
+  .badge.pass { color: var(--pass); border-color: rgba(46,204,113,0.4); background: rgba(46,204,113,0.12); }
+  .card-body { padding: 12px 14px; font-size: 12px; line-height: 1.65; color: var(--muted); }
+  .card-body strong { color: var(--text); }
+  .card-body code { background:#0f141e;border:1px solid var(--card-border);border-radius:4px;padding:1px 5px;font-size:11px;color:var(--text); }
+  .card-stats{
+    display:flex; gap:6px; flex-wrap:wrap;
+    padding:8px 14px; border-top:1px solid var(--card-border);
+    background: rgba(255,255,255,0.02);
+  }
+  .stat{
+    font-size:11px; padding:3px 7px; border-radius:999px;
+    border:1px solid var(--card-border); background:#1a2333; color:var(--muted);
+    display:inline-flex; gap:4px; align-items:center;
+  }
+  .stat strong{color:var(--text)}
+  .card-foot {
+    display: flex; align-items: center; gap: 8px; flex-wrap:wrap;
+    padding: 10px 14px;
+    border-top: 1px solid var(--card-border);
+    background: rgba(255,255,255,0.02);
+  }
+  .btn {
+    font: inherit; font-size: 12px; font-weight: 700;
+    padding: 7px 12px; border-radius: 8px;
+    border: 1px solid #2a3448; background: #1e2635; color: var(--text);
+    cursor: pointer; text-decoration:none; display:inline-block;
+  }
+  .btn:hover { background: #243044; text-decoration:none; color:var(--text); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn.primary:hover { background: #3f7af0; color:#fff; }
+  table.spec { width:100%; border-collapse:collapse; font-size:12px; }
+  table.spec th, table.spec td { text-align:left; padding:7px 10px; border-bottom:1px solid var(--card-border); vertical-align:top; }
+  table.spec th { color:var(--muted); font-weight:600; width:130px; }
+  table.spec td code { background:#0f141e;border:1px solid var(--card-border);border-radius:4px;padding:1px 5px;font-size:11px; }
+  ul.models { margin:0; padding:0; list-style:none; display:flex; flex-direction:column; }
+  ul.models li { padding:8px 14px; border-top:1px solid var(--card-border); font-size:12px; color:var(--muted); line-height:1.5; }
+  ul.models li strong { color:var(--text); }
+  ul.models li code { background:#0f141e;border:1px solid var(--card-border);border-radius:4px;padding:1px 5px;font-size:11px; }
+  footer { max-width: 1280px; margin: 0 auto; padding: 18px 20px 28px; color: var(--muted); font-size: 12px; text-align: center; }
+</style>
+</head>
+<body>
+<header class="site-header">
+  <div class="header-inner">
+    <a class="brand" href="index.html">
+      <div class="brand-icon" aria-hidden="true"><svg viewBox="0 0 12 12" role="img"><rect x="5" y="0" width="2" height="1" fill="#ffd54f"/><rect x="5" y="1" width="2" height="1" fill="#0c1118"/><rect x="3" y="2" width="6" height="4" fill="#e6eaf0"/><rect x="4" y="3" width="1" height="2" fill="#4f8cff"/><rect x="7" y="3" width="1" height="2" fill="#4f8cff"/><rect x="5" y="5" width="2" height="1" fill="#0c1118"/><rect x="2" y="7" width="1" height="3" fill="#8a97ad"/><rect x="9" y="7" width="1" height="3" fill="#8a97ad"/><rect x="4" y="7" width="4" height="3" fill="#e6eaf0"/><rect x="5" y="8" width="2" height="1" fill="#4f8cff"/><rect x="4" y="10" width="1" height="2" fill="#8a97ad"/><rect x="7" y="10" width="1" height="2" fill="#8a97ad"/></svg></div>
+      <div class="brand-text">
+        <span class="brand-title">Local LLM Lab</span>
+        <span class="brand-sub">11 models · R5 1600 · RTX 4060 Ti 16GB · CachyOS</span>
+      </div>
+    </a>
+    <nav class="tabs" aria-label="Primary">
+      <a class="tab active" href="index.html">⌂ Home</a>
+      <a class="tab" href="breakout/index.html">◧ Breakout 2D</a>
+      <a class="tab" href="breakout-3d/index.html">◧ Breakout 3D</a>
+    </nav>
+    <div class="header-actions">
+      <a class="icon-link" href="README.md">readme</a>
+    </div>
+  </div>
+</header>
+<div class="subbar">One prompt in, one <code>index.html</code> out — the same Breakout spec given to every locally-hosted model. Pick a suite below. Full rankings and per-model analysis live inside each suite's <code>report</code> + <code>results.json</code>.</div>
+<main>
+  <div class="grid-suites">
+    <div class="card">
+      <div class="card-head">
+        <div class="card-head-left">
+          <div class="rank" aria-hidden="true"><svg viewBox="0 0 12 12" role="img"><rect x="1" y="1" width="3" height="2" fill="#ff5252"/><rect x="4" y="1" width="4" height="2" fill="#ffb74d"/><rect x="8" y="1" width="3" height="2" fill="#66bb6a"/><rect x="1" y="3" width="3" height="2" fill="#4fc3f7"/><rect x="4" y="3" width="4" height="2" fill="#ffd54f"/><rect x="8" y="3" width="3" height="2" fill="#ff5252"/><rect x="6" y="6" width="1" height="1" fill="#ffffff"/><rect x="6" y="7" width="1" height="1" fill="#ffffff" opacity="0.4"/><rect x="3" y="9" width="1" height="1" fill="#7c5cff"/><rect x="4" y="9" width="4" height="1" fill="#e6eaf0"/><rect x="8" y="9" width="1" height="1" fill="#7c5cff"/></svg></div>
+          <div class="model-meta">
+            <div class="model-name">Breakout — 2D</div>
+            <div class="family">Vanilla Canvas · offline · <code>800×600</code> · rAF + dt</div>
+          </div>
+        </div>
+        <span class="badge pass">11 models</span>
+      </div>
+      <div class="card-body">
+        Classic Arkanoid in a <strong>single offline HTML file</strong>: paddle, ball, <strong>8×5</strong> colored bricks, arrows/A-D + Space, 3 lives, score, start / playing / game-over / victory screens. No frameworks, no assets — Canvas API only.
+      </div>
+      <div class="card-foot">
+        <a class="btn primary" href="breakout/index.html">◧ Open gallery</a>
+        <a class="btn" href="breakout/report.html">Report</a>
+        <a class="btn" href="breakout/models-configurations.html">Configurations</a>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head">
+        <div class="card-head-left">
+          <div class="rank" aria-hidden="true"><svg viewBox="0 0 12 12" role="img"><rect x="5" y="1" width="2" height="1" fill="#9feaff"/><rect x="4" y="2" width="4" height="1" fill="#9feaff"/><rect x="3" y="3" width="6" height="1" fill="#9feaff"/><rect x="3" y="4" width="3" height="4" fill="#4f8cff"/><rect x="6" y="4" width="3" height="4" fill="#2f6fe0"/><rect x="3" y="4" width="1" height="4" fill="#c9ecff" opacity="0.55"/><rect x="4" y="8" width="4" height="1" fill="#1a2333"/><rect x="5" y="9" width="2" height="1" fill="#1a2333"/></svg></div>
+          <div class="model-meta">
+            <div class="model-name">Breakout — 3D</div>
+            <div class="family">Three.js 0.160.0 · importmap + CDN · Clock Δ ≤ 0.05</div>
+          </div>
+        </div>
+        <span class="badge pass">11 models</span>
+      </div>
+      <div class="card-body">
+        Polished 3D Arkanoid in a <strong>single HTML file</strong>: Three.js scene, procedural textures, shadowed lights, 6-state machine, auto/manual camera (<strong>C</strong>/drag/wheel), octave Web Audio (<strong>M</strong>), particles + trail + shake. Needs <strong>internet</strong> for the unpkg CDN.
+      </div>
+      <div class="card-foot">
+        <a class="btn primary" href="breakout-3d/index.html">⬢ Open gallery</a>
+        <a class="btn" href="breakout-3d/report.html">Report</a>
+        <a class="btn" href="breakout-3d/models-configurations.html">Configurations</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div class="card-head-left">
+        <div class="model-meta">
+          <div class="model-name">Hardware &amp; environment</div>
+          <div class="family">Same inference host for both suites · via <code>fastfetch</code> · see suite reports → Environment</div>
+        </div>
+      </div>
+    </div>
+    <table class="spec">
+      <tr><th>Host</th><td><code>A320M-HD2</code></td></tr>
+      <tr><th>OS</th><td><code>CachyOS x86_64</code> · Kernel <code>7.2.0-1-cachyos</code></td></tr>
+      <tr><th>CPU</th><td><code>AMD Ryzen 5 1600</code> — 6c/12t Zen 1 @ 3.70 GHz</td></tr>
+      <tr><th>GPU</th><td><code>NVIDIA GeForce RTX 4060 Ti 16GB</code> [Discrete]</td></tr>
+      <tr><th>Memory</th><td><code>15.53 GiB</code> + Swap <code>15.53 GiB</code></td></tr>
+      <tr><th>Display</th><td><code>G27F 1920×1080 @ 60 Hz</code></td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div class="card-head-left">
+        <div class="model-meta">
+          <div class="model-name">Models tested</div>
+          <div class="family">Same 11 local GGUF models in both suites · full router configs in each suite's <code>models-configurations</code></div>
+        </div>
+      </div>
+      <span class="badge pass">11 total</span>
+    </div>
+    <ul class="models">
+      <li><strong>Qwen3 30B-A3B ×5</strong> — <code>qwen3-8-RIDGE</code> · <code>qwen3-8-Q4XS</code> · <code>qwen3-8-Q3S</code> · <code>qwen3-8-Q2</code> · <code>qwen3-8-Q3XL</code></li>
+      <li><strong>Qwen3.5 9B</strong> — <code>qwen3-5-9b-Q8</code></li>
+      <li><strong>Gemma 4 26B-A4B</strong> — <code>gemma4-26A4B</code> · <strong>Gemma 4 E4B uncensored</strong> — <code>gemma4-E4B</code></li>
+      <li><strong>gpt-oss 20B</strong> — <code>gpt-20-Q8</code> · <strong>Ornith 1.5 9B</strong> — <code>ornith-1-5-9b</code> · <strong>Tiel-Coder 35B-A3B</strong> — <code>tiel-coder-35b-IQ3_XXS</code></li>
+    </ul>
+  </div>
+</main>
+<footer>Local LLM coding benchmark · suites: <a href="breakout/index.html">breakout</a> · <a href="breakout-3d/index.html">breakout-3d</a> · Host: <code>A320M-HD2 · R5 1600 · RTX 4060 Ti 16GB</code></footer>
+</body>
+</html>

@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Breakout</title>
+<style>
+  body{margin:0;background:#000;color:#fff;font-family:sans-serif;}
+  canvas{display:block;margin:auto;background:#222;}
+</style>
+</head>
+<body>
+<canvas id="gameCanvas" width="800" height="600"></canvas>
+<script>
+(() => {
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+  const WIDTH = canvas.width;
+  const HEIGHT = canvas.height;
+
+  // Game state
+  let state = 'start'; // 'start', 'playing', 'paused', 'gameover', 'victory'
+
+  // Score & lives
+  let score = 0;
+  let lives = 3;
+
+  // Paddle
+  const paddle = {
+    width: 120,
+    height: 20,
+    x: (WIDTH - 120) / 2,
+    y: HEIGHT - 30,
+    speed: 400 // px/s
+  };
+
+  // Ball
+  const ball = {
+    radius: 8,
+    x: paddle.x + paddle.width / 2,
+    y: paddle.y - 8,
+    vx: 0,
+    vy: 0,
+    speed: 250 // px/s
+  };
+
+  // Bricks
+  const brickRows = 5;
+  const brickCols = 8;
+  const brickGap = 5;
+  const brickHeight = 20;
+  const brickWidth = (WIDTH - (brickCols + 1) * brickGap) / brickCols;
+  const brickColors = ['#FF5733','#FFBD33','#33FF57','#3357FF','#8E33FF'];
+  const bricks = [];
+  for (let r = 0; r < brickRows; r++) {
+    for (let c = 0; c < brickCols; c++) {
+      const x = brickGap + c * (brickWidth + brickGap);
+      const y = 50 + r * (brickHeight + brickGap);
+      bricks.push({
+        x, y, w: brickWidth, h: brickHeight,
+        color: brickColors[r % brickColors.length],
+        destroyed: false
+      });
+    }
+  }
+
+  // Input handling
+  const keys = { left: false, right: false };
+  const keyDown = e => {
+    if (e.code === 'ArrowLeft' || e.key === 'a' || e.key === 'A') keys.left = true;
+    if (e.code === 'ArrowRight' || e.key === 'd' || e.key === 'D') keys.right = true;
+    if (e.code === 'Space' || e.key === ' ') {
+      if (state === 'start') state = 'playing';
+      else if (state === 'playing') state = 'paused';
+      else if (state === 'paused') state = 'playing';
+      else if (state === 'gameover' || state === 'victory') resetGame();
+      else {
+        if (ball.vx === 0 && ball.vy === 0) {
+          ball.vx = 0;
+          ball.vy = -ball.speed;
+        }
+      }
+    }
+  };
+  const keyUp = e => {
+    if (e.code === 'ArrowLeft' || e.key === 'a' || e.key === 'A') keys.left = false;
+    if (e.code === 'ArrowRight' || e.key === 'd' || e.key === 'D') keys.right = false;
+  };
+  window.addEventListener('keydown', keyDown);
+  window.addEventListener('keyup', keyUp);
+  window.addEventListener('click', () => {
+    if (state === 'gameover' || state === 'victory') resetGame();
+  });
+
+  // Game loop
+  let lastTime = 0;
+  const loop = timestamp => {
+    const dt = (timestamp - lastTime) / 1000;
+    lastTime = timestamp;
+    update(dt);
+    render();
+    requestAnimationFrame(loop);
+  };
+  requestAnimationFrame(loop);
+
+  // Update logic
+  const update = dt => {
+    if (state === 'playing') {
+      // Paddle movement
+      if (keys.left) paddle.x -= paddle.speed * dt;
+      if (keys.right) paddle.x += paddle.speed * dt;
+      if (paddle.x < 0) paddle.x = 0;
+      if (paddle.x + paddle.width > WIDTH) paddle.x = WIDTH - paddle.width;
+
+      // Ball movement
+      ball.x += ball.vx * dt;
+      ball.y += ball.vy * dt;
+
+      // Wall collisions
+      if (ball.x - ball.radius <= 0 || ball.x + ball.radius >= WIDTH) ball.vx = -ball.vx;
+      if (ball.y - ball.radius <= 0) ball.vy = -ball.vy;
+
+      // Paddle collision
+      if (
+        ball.vy > 0 &&
+        ball.y + ball.radius >= paddle.y &&
+        ball.y - ball.radius <= paddle.y + paddle.height &&
+        ball.x + ball.radius >= paddle.x &&
+        ball.x - ball.radius <= paddle.x + paddle.width
+      ) {
+        // Reflect based on hit position
+        const relativeX = (ball.x - paddle.x) / paddle.width; // 0..1
+        const angle = Math.PI / 2 - (relativeX - 0.5) * Math.PI / 3; // range ~30° to 150°
+        const speed = Math.sqrt(ball.vx * ball.vx + ball.vy * ball.vy);
+        ball.vx = speed * Math.cos(angle);
+        ball.vy = -speed * Math.sin(angle);
+      }
+
+      // Brick collisions
+      for (const b of bricks) {
+        if (!b.destroyed) {
+          if (
+            ball.x + ball.radius >= b.x &&
+            ball.x - ball.radius <= b.x + b.w &&
+            ball.y + ball.radius >= b.y &&
+            ball.y - ball.radius <= b.y + b.h
+          ) {
+            b.destroyed = true;
+            score += 10;
+            ball.vy = -ball.vy;
+            break;
+          }
+        }
+      }
+
+      // Bottom check
+      if (ball.y + ball.radius >= HEIGHT) {
+        lives--;
+        if (lives <= 0) {
+          state = 'gameover';
+        } else {
+          resetBall();
+        }
+      }
+
+      // Victory check
+      if (bricks.every(b => b.destroyed)) {
+        state = 'victory';
+      }
+    }
+  };
+
+  // Render logic
+  const render = () => {
+    ctx.clearRect(0, 0, WIDTH, HEIGHT);
+
+    // Draw bricks
+    for (const b of bricks) {
+      if (!b.destroyed) {
+        ctx.fillStyle = b.color;
+        ctx.fillRect(b.x, b.y, b.w, b.h);
+      }
+    }
+
+    // Draw paddle
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(paddle.x, paddle.y, paddle.width, paddle.height);
+
+    // Draw ball
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+    ctx.fill();
+
+    // HUD
+    ctx.font = '20px sans-serif';
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'left';
+    ctx.fillText(`Score: ${score}`, 10, 30);
+    ctx.fillText(`Lives: ${lives}`, WIDTH - 110, 30);
+
+    // State screens
+    if (state === 'start') {
+      ctx.font = '48px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('Breakout', WIDTH / 2, HEIGHT / 2 - 50);
+      ctx.font = '24px sans-serif';
+      ctx.fillText('Press Space to Start', WIDTH / 2, HEIGHT / 2 + 20);
+    } else if (state === 'paused') {
+      ctx.font = '48px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('Paused', WIDTH / 2, HEIGHT / 2);
+    } else if (state === 'gameover') {
+      ctx.font = '48px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('Game Over', WIDTH / 2, HEIGHT / 2 - 20);
+      ctx.font = '24px sans-serif';
+      ctx.fillText('Press any key to restart', WIDTH / 2, HEIGHT / 2 + 20);
+    } else if (state === 'victory') {
+      ctx.font = '48px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('You Win!', WIDTH / 2, HEIGHT / 2 - 20);
+      ctx.font = '24px sans-serif';
+      ctx.fillText('Press any key to restart', WIDTH / 2, HEIGHT / 2 + 20);
+    }
+  };
+
+  // Helpers
+  const resetBall = () => {
+    ball.x = paddle.x + paddle.width / 2;
+    ball.y = paddle.y - ball.radius;
+    ball.vx = 0;
+    ball.vy = 0;
+  };
+  const resetGame = () => {
+    score = 0;
+    lives = 3;
+    for (const b of bricks) b.destroyed = false;
+    paddle.x = (WIDTH - paddle.width) / 2;
+    resetBall();
+    state = 'start';
+  };
+})();
+</script>
+</body>
+</html>

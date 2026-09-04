@@ -1,0 +1,1507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Breakout (Gemma 4 Edition)</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Arial', sans-serif;
+            background-color: #06080f;
+        }
+        canvas {
+            display: block;
+        }
+        #hud {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            font-size: 24px;
+            display: flex;
+            gap: 30px;
+            pointer-events: none; /* Allows clicks to pass through to canvas */
+            text-shadow: 0 0 8px rgba(0, 150, 255, 0.8);
+        }
+        .heart {
+            display: inline-block;
+            font-size: 30px;
+            animation: heartbeat 1.5s infinite alternate;
+        }
+        @keyframes heartbeat {
+            from { transform: scale(1); opacity: 0.9; }
+            to { transform: scale(1.1); opacity: 1; }
+        }
+        #camera-mode-indicator {
+            font-size: 20px;
+            color: #4a6cff;
+        }
+        #mute-indicator {
+            font-size: 20px;
+            color: #cccccc;
+            margin-left: 10px;
+        }
+        #game-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, rgba(6, 8, 15, 0.9) 0%, rgba(0, 0, 0, 0.7) 100%);
+            pointer-events: auto; /* Allows clicking to trigger actions */
+            transition: opacity 0.3s ease;
+        }
+        .overlay-content {
+            text-align: center;
+            padding: 40px;
+            border-radius: 15px;
+            background: rgba(10, 16, 40, 0.9);
+            box-shadow: 0 0 30px rgba(74, 108, 255, 0.5);
+        }
+        #overlay-title {
+            font-size: 64px;
+            color: #ffffff;
+            text-shadow: 0 0 15px #fff, 0 0 30px #4a6cff;
+            margin-bottom: 10px;
+            animation: pulse 2s infinite ease-in-out;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        #overlay-subtitle {
+            font-size: 28px;
+            color: #aed6f1;
+            margin-bottom: 30px;
+            animation: blink 1s step-end infinite;
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+        #key-hints {
+            font-size: 18px;
+            color: #cccccc;
+            line-height: 1.8;
+            padding: 20px;
+            border: 1px solid rgba(74, 108, 255, 0.3);
+            border-radius: 10px;
+            background: rgba(0, 0, 0, 0.3);
+        }
+        .key-hint {
+            display: block;
+            margin: 5px 0;
+        }
+        .key-hint strong {
+            color: #ffeaa7;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="hud">
+        <div id="score-display">Score: 0</div>
+        <div id="lives-display">Lives: </div>
+        <div id="camera-mode-indicator">CAM: AUTO</div>
+        <div id="mute-indicator">🔊</div>
+    </div>
+    <div id="game-overlay">
+        <div class="overlay-content">
+            <div id="overlay-title">3D BREAKOUT</div>
+            <div id="overlay-subtitle">Press SPACE to Start</div>
+            <div id="key-hints">
+                <span class="key-hint"><strong>← / → or A / D:</strong> Move Paddle</span>
+                <span class="key-hint"><strong>SPACE:</strong> Start/Pause Game</span>
+                <span class="key-hint"><strong>C:</strong> Toggle Camera Mode (Manual)</span>
+                <span class="key-hint"><strong>R:</strong> Reset Camera / Full Reset</span>
+                <span class="key-hint"><strong>M:</strong> Toggle Mute</span>
+            </div>
+        </div>
+    </div>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+    <script type="module">
+        // ====================================================================
+        // CONSTANTS & CONFIGURATION
+        // ====================================================================
+        const CONFIG = {
+            // Game Bounds (World Units)
+            WORLD_W: 800,
+            WORLD_H: 600,
+            LEFT: -6,
+            RIGHT: 6,
+            TOP: 8,
+            FLOOR_Y: -6,
+            PADDLE_Y: -4.5,
+
+            // Movement & Speed
+            PADDLE_SPEED: 11,
+            BALL_R: 0.25,
+            BALL_SPEED: 16,
+            
+            // Brick Layout
+            BRICK_COLS: 8,
+            BRICK_ROWS: 5,
+            BRICK_W: 1.3,
+            BRICK_H: 0.55,
+            BRICK_D: 0.9,
+            BRICK_SPACING_X: 1.5,
+            BRICK_SPACING_Y: 0.85,
+
+            // Physics & Game State
+            MAX_LIVES: 3,
+            BALL_Y_ANTI_STALL: 1.5,
+            
+            // Camera Defaults
+            CAM_BASE_POS: new THREE.Vector3(0, 9, 14),
+            CAM_TARGET: new THREE.Vector3(0, 1, 0),
+            CAM_AUTO_LERP_FACTOR: 0.25, // lerp factor for X movement
+            CAM_AUTO_Y_DECAY_RATE: 3, // exp(-dt*rate)
+            
+            // Manual Camera Defaults
+            CAM_MANUAL_TARGET: new THREE.Vector3(0, 1, 0),
+            CAM_MANUAL_YAW: 0,
+            CAM_MANUAL_PITCH: 0.519, // cos(theta) = 0.519, theta = 1.028 rad
+            CAM_MANUAL_DIST: 16.16,
+            CAM_MANUAL_PITCH_CLAMP: { min: 0.08, max: 1.35 },
+            CAM_MANUAL_DIST_CLAMP: { min: 8, max: 30 },
+        };
+
+        // Colors
+        const COLORS = {
+            BACKGROUND: 0x06080f,
+            FOG: 0x06080f,
+            BRICK_COLORS: [
+                0xff5252, // Red
+                0xffb74d, // Orange
+                0xffd54f, // Yellow
+                0x66bb6a, // Green
+                0x4fc3f7  // Blue
+            ],
+            PADDLE_COLOR_START: 0x9feaff,
+            PADDLE_COLOR_MID: 0x29c7ff,
+            PADDLE_COLOR_END: 0x0a6fa8,
+            FLOOR_BASE: 0x0d1226,
+            BACKDROP_GRADIENT: [0x0a1028, 0x070b1c, 0x03050c],
+        };
+
+        // State Machine Definition
+        const GAME_STATE = {
+            START: 'START',
+            READY: 'READY',
+            PLAYING: 'PLAYING',
+            PAUSED: 'PAUSED',
+            GAMEOVER: 'GAMEOVER',
+            VICTORY: 'VICTORY',
+        };
+
+        // ====================================================================
+        // GAME OBJECTS & STATE
+        // ====================================================================
+        let state = GAME_STATE.START;
+        let score = 0;
+        let lives = CONFIG.MAX_LIVES;
+        let lastTime = 0;
+        let clock = new THREE.Clock();
+        let isMuted = false;
+        let isPaused = true; // Start in PAUSED state while in START screen
+        let isCameraManual = false;
+
+        // Game Objects
+        let paddle, ball, floorMesh;
+        let bricks = [];
+        let particleSystem = new THREE.Points();
+        let particleGeometry = new THREE.BufferGeometry();
+        let particleMaterial = new THREE.PointsMaterial({
+            size: 0.15,
+            blending: THREE.AdditiveBlending,
+            transparent: true,
+            sizeAttenuation: true
+        });
+
+        // Animation Tracking
+        let ballTrail = [];
+        let currentBrickFlash = new Map(); // Map<Mesh, {startTime: number, originalScale: THREE.Vector3}>
+        let paddleSquashTimer = 0;
+        let ballPulseTimer = 0;
+        let cameraShakeTimer = 0;
+
+        // Camera Control
+        let camera = new THREE.PerspectiveCamera(60, CONFIG.WORLD_W / CONFIG.WORLD_H, 0.1, 100);
+        let isDragging = false;
+        let previousMousePosition = { x: 0, y: 0 };
+        let cameraOrbit = {
+            yaw: 0,
+            pitch: 0.519, // Default pitch from constants
+            distance: 16.16,
+        };
+
+        // Audio Context
+        let audioContext;
+        let isAudioUnlocked = false;
+
+        // ====================================================================
+        // INITIALIZATION FUNCTIONS
+        // ====================================================================
+
+        function initThree() {
+            // Scene
+            const scene = new THREE.Scene();
+            scene.fog = new THREE.Fog(COLORS.FOG, 38, 75);
+
+            // Renderer
+            const renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            document.body.appendChild(renderer.domElement);
+
+            // Camera Setup
+            camera.position.copy(CONFIG.CAM_BASE_POS);
+            camera.lookAt(CONFIG.CAM_TARGET);
+
+            // Lighting
+            // Ambient Light
+            const ambientLight = new THREE.AmbientLight(0x404040, 1.2);
+            scene.add(ambientLight);
+
+            // Directional Light (Main)
+            const dirLight = new THREE.DirectionalLight(0xffffff, 1.7);
+            dirLight.position.set(6, 16, 9);
+            dirLight.castShadow = true;
+            
+            // Shadow properties setup (Crucial constraint)
+            dirLight.shadow.mapSize.width = 2048;
+            dirLight.shadow.mapSize.height = 2048;
+            dirLight.shadow.camera.left = -10;
+            dirLight.shadow.camera.right = 10;
+            dirLight.shadow.camera.top = 12;
+            dirLight.shadow.camera.bottom = -10;
+            dirLight.shadow.camera.near = 2;
+            dirLight.shadow.camera.far = 45;
+            dirLight.shadow.bias = -0.0003;
+            dirLight.shadow.normalBias = 0.02;
+            scene.add(dirLight);
+
+            // Rim Directional Light
+            const rimLight = new THREE.DirectionalLight(0x4a6cff, 0.5);
+            rimLight.position.set(-8, 4, -10);
+            scene.add(rimLight);
+
+            // Point Light (Follows Ball)
+            const pointLight = new THREE.PointLight(0x66d9ff, 1.2, 9, 2);
+            pointLight.position.set(ball.position.x, ball.position.y + 0.3, 1.5);
+            scene.add(pointLight);
+
+            // --- Build Playfield ---
+            buildPlayfield(scene);
+
+            // --- Build Backdrop & Floor ---
+            buildBackdrop(scene);
+            buildFloor(scene);
+
+            // --- Starfield ---
+            createStarfield(scene);
+
+            // --- Renderer Finalization ---
+            const rendererInstance = renderer;
+            rendererInstance.scene = scene;
+            rendererInstance.camera = camera;
+            
+            return { scene, renderer: rendererInstance };
+        }
+
+        function buildPlayfield(scene) {
+            // 1. Invisible Wall Colliders (Conceptual, handled in collision checks)
+            // LEFT=-6, RIGHT=6, TOP=8, FLOOR_Y=-6. Paddle rests at PADDLE_Y=-4.5.
+
+            // 2. LineLoop Border Frame (Decoration)
+            const lineGeometry = new THREE.BufferGeometry();
+            const points = [];
+            // Corners
+            points.push(new THREE.Vector3(CONFIG.LEFT, CONFIG.TOP, 0));
+            points.push(new THREE.Vector3(CONFIG.RIGHT, CONFIG.TOP, 0));
+            points.push(new THREE.Vector3(CONFIG.RIGHT, CONFIG.FLOOR_Y, 0));
+            points.push(new THREE.Vector3(CONFIG.LEFT, CONFIG.FLOOR_Y, 0));
+            points.push(new THREE.Vector3(CONFIG.LEFT, CONFIG.TOP, 0)); // Close loop
+
+            lineGeometry.setFromPoints(points);
+            const lineMaterial = new THREE.LineBasicMaterial({ color: 0xcccccc, linewidth: 3 });
+            const border = new THREE.LineLoop(lineGeometry, lineMaterial);
+            scene.add(border);
+
+            // 3. Paddle
+            const paddleGeometry = new THREE.RoundedBoxGeometry(2.4, 0.3, 0.8, 4, 0.1);
+            const paddleMaterial = new THREE.MeshPhongMaterial({ color: COLORS.PADDLE_COLOR_START, shininess: 80 });
+            paddle = new THREE.Mesh(paddleGeometry, paddleMaterial);
+            paddle.position.set(0, CONFIG.PADDLE_Y, 0);
+            paddle.receiveShadow = true;
+            paddle.castShadow = true;
+            paddle.userData = { isPaddle: true, originalScale: new THREE.Vector3(1, 1, 1) };
+            scene.add(paddle);
+
+            // 4. Ball
+            const ballGeometry = new THREE.SphereGeometry(CONFIG.BALL_R, 32, 32);
+            const ballMaterial = new THREE.MeshPhongMaterial({ color: 0xffffff, emissive: 0xaaaaaa, emissiveIntensity: 0.5 });
+            ball = new THREE.Mesh(ballGeometry, ballMaterial);
+            ball.position.set(0, CONFIG.PADDLE_Y + CONFIG.BALL_R, 0);
+            ball.receiveShadow = true;
+            ball.castShadow = true;
+            ball.userData = { isBall: true, velocity: new THREE.Vector3(0, 0, 0), radius: CONFIG.BALL_R };
+            scene.add(ball);
+
+            // 5. Bricks
+            const brickGeometry = new THREE.RoundedBoxGeometry(CONFIG.BRICK_W, CONFIG.BRICK_H, CONFIG.BRICK_D, 4, 0.08);
+            
+            let brickIndex = 0;
+            for (let row = 0; row < CONFIG.BRICK_ROWS; row++) {
+                const yPos = CONFIG.TOP - (row * CONFIG.BRICK_SPACING_Y);
+                for (let col = 0; col < CONFIG.BRICK_COLS; col++) {
+                    const xPos = -5.25 + (col * CONFIG.BRICK_SPACING_X);
+                    
+                    // Color and Material
+                    const brickColor = COLORS.BRICK_COLORS[row];
+                    const brickMaterial = new THREE.MeshPhongMaterial({ color: brickColor, shininess: 100 });
+                    
+                    const brickMesh = new THREE.Mesh(brickGeometry, brickMaterial);
+                    brickMesh.position.set(xPos, yPos, 0);
+                    brickMesh.receiveShadow = true;
+                    brickMesh.castShadow = true;
+                    brickMesh.userData = { 
+                        isBrick: true, 
+                        row: row, 
+                        originalColor: brickColor,
+                        originalScale: new THREE.Vector3(1, 1, 1)
+                    };
+                    
+                    scene.add(brickMesh);
+                    bricks.push(brickMesh);
+                    currentBrickFlash.set(brickMesh, { startTime: 0, originalScale: brickMesh.scale.clone() });
+                    brickIndex++;
+                }
+            }
+        }
+
+        function buildBackdrop(scene) {
+            // Backdrop Plane (220x110 at (0, 8, -48))
+            const backdropGeometry = new THREE.PlaneGeometry(220, 110);
+            const backdropMaterial = new THREE.MeshBasicMaterial({
+                map: null, // Will be set to CanvasTexture
+                transparent: true
+            });
+            const backdropMesh = new THREE.Mesh(backdropGeometry, backdropMaterial);
+            backdropMesh.position.set(0, CONFIG.TOP, -48);
+            backdropMesh.receiveShadow = true;
+            backdropMesh.name = "Backdrop";
+            scene.add(backdropMesh);
+
+            // Procedural Texture: Backdrop (1024x512)
+            const backdropCanvas = document.createElement('canvas');
+            backdropCanvas.width = 1024;
+            backdropCanvas.height = 512;
+            const ctx = backdropCanvas.getContext('2d');
+
+            // 1. Vertical Gradient
+            const gradient = ctx.createLinearGradient(0, 0, 0, 512);
+            gradient.addColorStop(0, COLORS.BACKDROP_GRADIENT[0]); // Top: #0a1028
+            gradient.addColorStop(0.5, COLORS.BACKDROP_GRADIENT[1]); // Middle: #070b1c
+            gradient.addColorStop(1, COLORS.BACKDROP_GRADIENT[2]); // Bottom: #03050c
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 1024, 512);
+
+            // 2. Nebula Blobs (Soft Radial)
+            const drawBlob = (x, y, radius, color) => {
+                const gradientBlob = ctx.createRadialGradient(x, y, 0, x, y, radius);
+                gradientBlob.addColorStop(0, color + 'FF'); // Solid center
+                gradientBlob.addColorStop(0.5, color + '80'); // Semi-transparent middle
+                gradientBlob.addColorStop(1, color + '00'); // Transparent edge
+                ctx.fillStyle = gradientBlob;
+                ctx.fillRect(0, 0, 1024, 512);
+            };
+            // Blob 1 (Top Left)
+            drawBlob(250, 100, 180, 0x4a6cff); 
+            // Blob 2 (Bottom Right)
+            drawBlob(800, 400, 200, 0x66d9ff); 
+            // Blob 3 (Center)
+            drawBlob(512, 250, 150, 0xffd54f); 
+
+            // Apply Texture
+            backdropMesh.material.map = new THREE.CanvasTexture(backdropCanvas);
+            backdropMesh.material.needsUpdate = true;
+        }
+
+        function buildFloor(scene) {
+            // Procedural Texture: Floor (512x512)
+            const floorCanvas = document.createElement('canvas');
+            floorCanvas.width = 512;
+            floorCanvas.height = 512;
+            const ctx = floorCanvas.getContext('2d');
+
+            // 1. Base Color
+            ctx.fillStyle = COLORS.FLOOR_BASE;
+            ctx.fillRect(0, 0, 512, 512);
+
+            // 2. Fine Subgrid (32px)
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.lineWidth = 1;
+            for (let x = 0; x < 512; x += 32) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, 512);
+                ctx.stroke();
+            }
+            for (let y = 0; y < 512; y += 32) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(512, y);
+                ctx.stroke();
+            }
+
+            // 3. Main Grid (64px) - Overlaid
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+            ctx.lineWidth = 2;
+            for (let x = 0; x < 512; x += 64) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, 512);
+                ctx.stroke();
+            }
+            for (let y = 0; y < 512; y += 64) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(512, y);
+                ctx.stroke();
+            }
+
+            // 4. Edge Vignette (Darkening corners)
+            const vignetteGradient = ctx.createRadialGradient(256, 256, 0, 256, 256, 300);
+            vignetteGradient.addColorStop(0, 'rgba(0, 0, 0, 0)');
+            vignetteGradient.addColorStop(1, 'rgba(0, 0, 0, 0.4)');
+            ctx.fillStyle = vignetteGradient;
+            ctx.fillRect(0, 0, 512, 512);
+
+            // Apply Texture
+            floorMesh = new THREE.Mesh(new THREE.PlaneGeometry(CONFIG.WORLD_W, CONFIG.WORLD_H), new THREE.MeshPhongMaterial({
+                map: new THREE.CanvasTexture(floorCanvas),
+                side: THREE.DoubleSide,
+                shininess: 10,
+                color: COLORS.FLOOR_BASE
+            }));
+            floorMesh.rotation.x = -Math.PI / 2; // Lay flat on XZ plane
+            floorMesh.position.set(0, CONFIG.FLOOR_Y, 0);
+            floorMesh.receiveShadow = true;
+            floorMesh.castShadow = true;
+            scene.add(floorMesh);
+        }
+
+        function createStarfield(scene) {
+            const starCount = 5000;
+            const positions = new Float32Array(starCount * 3);
+            
+            for (let i = 0; i < starCount * 3; i += 3) {
+                // Position stars far away, spanning a large area
+                const x = (Math.random() - 0.5) * 400;
+                const y = (Math.random() - 0.5) * 400;
+                const z = (Math.random() - 0.5) * 400;
+                positions[i] = x;
+                positions[i + 1] = y;
+                positions[i + 2] = z;
+            }
+
+            particleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            
+            // Use a small white material for stars
+            const starMaterial = new THREE.PointsMaterial({
+                color: 0xffffff,
+                size: 0.5,
+                sizeAttenuation: true,
+                transparent: true,
+                opacity: 0.9
+            });
+            
+            particleSystem.material = starMaterial;
+            scene.add(particleSystem);
+        }
+
+        // ====================================================================
+        // TEXTURE GENERATION HELPERS
+        // ====================================================================
+
+        function generateBrickTexture(row) {
+            const canvas = document.createElement('canvas');
+            const size = 256 * 2; // 256 width, 96 height -> scaled up for better detail
+            canvas.width = size;
+            canvas.height = size * (96 / 256);
+            const ctx = canvas.getContext('2d');
+            
+            const baseColor = COLORS.BRICK_COLORS[row];
+            
+            // 1. Base Color Fill
+            ctx.fillStyle = baseColor;
+            ctx.fillRect(0, 0, size, size * (96 / 256));
+
+            // 2. Vertical Gloss Gradient (Top -> Bottom)
+            const glossGradient = ctx.createLinearGradient(0, 0, 0, size * (96 / 256));
+            // Bright Top (Highlight)
+            glossGradient.addColorStop(0, '#ffffff'); 
+            // Mid Tone (Base color mixed in)
+            glossGradient.addColorStop(0.5, `rgba(${parseInt(baseColor.toString(16).slice(1, 3), 16)}, ${parseInt(baseColor.toString(16).slice(3, 5), 16)}, ${parseInt(baseColor.toString(16).slice(5, 7), 16)}, 1)`);
+            // Dark Bottom (Shadow)
+            glossGradient.addColorStop(1, `rgba(${parseInt(baseColor.toString(16).slice(1, 3), 16)}, ${parseInt(baseColor.toString(16).slice(3, 5), 16)}, ${parseInt(baseColor.toString(16).slice(5, 7), 16)}, 0.8)`);
+            
+            ctx.fillStyle = glossGradient;
+            ctx.fillRect(0, 0, size, size * (96 / 256));
+
+            // 3. Random White Streaks (~40)
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+            ctx.lineWidth = 1.5;
+            for (let i = 0; i < 40; i++) {
+                const x1 = Math.random() * size;
+                const y1 = Math.random() * (size * (96 / 256));
+                const x2 = x1 + (Math.random() - 0.5) * 30; // Short line segment
+                const y2 = y1 + (Math.random() - 0.5) * 30;
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.stroke();
+            }
+            
+            // 4. Bevel Border Stroke (Simulated via thick outer stroke)
+            ctx.strokeStyle = '#222222'; // Dark border color
+            ctx.lineWidth = 3;
+            ctx.strokeRect(1, 1, size - 2, size * (96 / 256) - 2);
+
+
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.needsUpdate = true;
+            return texture;
+        }
+
+        function generatePaddleTexture() {
+            const canvas = document.createElement('canvas');
+            const size = 256;
+            const height = 64;
+            canvas.width = size;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            
+            // 1. Vertical Gradient (Left -> Right)
+            const gradient = ctx.createLinearGradient(0, 0, size, 0);
+            gradient.addColorStop(0, '#9feaff'); // Left
+            gradient.addColorStop(0.5, '#29c7ff'); // Center
+            gradient.addColorStop(1, '#0a6fa8'); // Right
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, size, height);
+
+            // 2. Center Stripe (Slightly brighter)
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(size * 0.4, 0, size * 0.2, height);
+
+            // 3. Edge Accents (Small dark squares)
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, 10, height); // Left edge
+            ctx.fillRect(size - 10, 0, 10, height); // Right edge
+            
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.needsUpdate = true;
+            return texture;
+        }
+
+
+        // ====================================================================
+        // GAME LOGIC & PHYSICS
+        // ====================================================================
+
+        function resetBallAndPaddle() {
+            ball.position.set(0, CONFIG.PADDLE_Y + CONFIG.BALL_R, 0);
+            ball.userData.velocity.set(0, 0, 0);
+            
+            paddle.position.x = 0;
+            paddle.scale.set(1, 1, 1);
+            paddle.userData.originalScale.copy(paddle.scale);
+            
+            // Clear trail
+            ballTrail = [];
+            
+            // Reset ball pulse timer
+            ballPulseTimer = 0;
+        }
+
+        function launchBall() {
+            if (state !== GAME_STATE.READY && state !== GAME_STATE.START) return;
+
+            // Random small spread angle = (Math.random()-0.5)*0.5
+            const randomOffset = (Math.random() - 0.5) * 0.5;
+            // Velocity: (sin(a)*SPEED, cos(a)*SPEED, 0)
+            const angle = Math.PI / 2 + randomOffset; // Start slightly upwards (PI/2)
+            
+            ball.userData.velocity.set(
+                Math.sin(angle) * CONFIG.BALL_SPEED, 
+                Math.cos(angle) * CONFIG.BALL_SPEED, 
+                0
+            );
+            
+            if (state === GAME_STATE.START) {
+                state = GAME_STATE.READY;
+                updateOverlay(true);
+            } else if (state === GAME_STATE.READY) {
+                state = GAME_STATE.PLAYING;
+                updateOverlay(true);
+            }
+        }
+
+        function handlePaddleCollision(dt) {
+            const ballPos = ball.position;
+            const paddlePos = paddle.position;
+            const paddleW = 2.4;
+            const paddleD = 0.8;
+            
+            // Check if ball is horizontally aligned with paddle's X bounds
+            if (Math.abs(ballPos.x - paddlePos.x) < (paddleW / 2 + CONFIG.BALL_R)) {
+                // Check if ball is vertically aligned with paddle's Y bounds (and moving downwards)
+                if (ballPos.y - CONFIG.BALL_R < CONFIG.PADDLE_Y + 0.3 && ball.userData.velocity.y < 0) {
+                    
+                    // 1. Calculate offset (-1 to 1)
+                    // Offset is based on where the ball hits relative to the center of the paddle
+                    const offset = Math.max(-1, Math.min(1, (ballPos.x - paddlePos.x) / (paddleW / 2)));
+                    
+                    // 2. Calculate angle
+                    // Base angle is 90 degrees (PI/2) pointing up. Offset shifts it.
+                    const angle = offset * Math.PI / 3; // 60 degrees spread
+                    
+                    // 3. Calculate new velocity components (keeping speed constant)
+                    const newVelX = Math.sin(angle) * CONFIG.BALL_SPEED;
+                    const newVelY = Math.cos(angle) * CONFIG.BALL_SPEED;
+                    
+                    // Apply new velocity
+                    ball.userData.velocity.set(newVelX, newVelY, 0);
+
+                    // 4. Paddle Squash/Stretch Animation (0.1s sine curve)
+                    paddleSquashTimer = 0;
+                    
+                    // 5. Play Sound
+                    playPaddleSound();
+                }
+            }
+        }
+
+        function handleBrickCollision(dt) {
+            const ballPos = ball.position;
+            const ballRadius = CONFIG.BALL_R;
+            let collisionOccurred = false;
+
+            for (let i = bricks.length - 1; i >= 0; i--) {
+                const brick = bricks[i];
+                const brickPos = brick.position;
+                
+                // AABB Check (Simplified: assuming ball is small enough)
+                const dx = ballPos.x - brickPos.x;
+                const dy = ballPos.y - brickPos.y;
+                const dz = ballPos.z - brickPos.z; // Z is always 0 here, but good practice
+                
+                // Half dimensions of the brick (W/2, H/2, D/2)
+                const halfW = CONFIG.BRICK_W / 2;
+                const halfH = CONFIG.BRICK_H / 2;
+                const halfD = CONFIG.BRICK_D / 2;
+
+                // Check overlap
+                if (Math.abs(dx) < halfW && Math.abs(dy) < halfH && Math.abs(dz) < halfD) {
+                    
+                    // --- Collision Response: Least Penetration ---
+                    const penetrationX = halfW - Math.abs(dx);
+                    const penetrationY = halfH - Math.abs(dy);
+                    const penetrationZ = halfD - Math.abs(dz);
+
+                    let normal = new THREE.Vector3(0, 0, 0);
+                    let penetration = Infinity;
+
+                    if (penetrationX < penetration) {
+                        penetration = penetrationX;
+                        normal.set(Math.sign(dx), 0, 0);
+                    }
+                    if (penetrationY < penetration) {
+                        penetration = penetrationY;
+                        normal.set(0, Math.sign(dy), 0);
+                    }
+                    if (penetrationZ < penetration) {
+                        penetration = penetrationZ;
+                        normal.set(0, 0, Math.sign(dz));
+                    }
+                    
+                    // 1. Move ball out of collision
+                    ball.position.addScaledVector(normal, penetration);
+
+                    // 2. Reflect velocity
+                    const vel = ball.userData.velocity;
+                    const dot = vel.dot(normal);
+                    
+                    // Reflection formula: V_new = V_old - 2 * (V_old . N) * N
+                    vel.sub(normal.clone().multiplyScalar(2 * dot));
+                    
+                    // Ensure ball speed doesn't drop too much (optional, but good)
+                    if (vel.length() < CONFIG.BALL_SPEED * 0.9) {
+                        vel.normalize().multiplyScalar(CONFIG.BALL_SPEED);
+                    }
+
+                    // 3. Animation & Scoring
+                    score += 10;
+                    currentBrickFlash.set(brick, { startTime: clock.elapsedTime, originalScale: brick.scale.clone() });
+                    
+                    // 4. Particle Burst
+                    createParticleBurst(brick.userData.row, brick.position);
+                    
+                    // 5. Mark for removal
+                    brick.visible = false;
+                    
+                    // 6. Breakout Check
+                    if (bricks.filter(b => b.visible).length === 0) {
+                        handleVictory();
+                    }
+
+                    collisionOccurred = true;
+                    break; // Only handle one collision per frame for simplicity
+                }
+            }
+            return collisionOccurred;
+        }
+
+        function handleWallCollisions(dt) {
+            const vel = ball.userData.velocity;
+            const ballPos = ball.position;
+            const radius = CONFIG.BALL_R;
+            let didCollide = false;
+
+            // Left/Right Walls
+            if (ballPos.x + radius > CONFIG.RIGHT) {
+                vel.x = Math.abs(vel.x);
+                ball.position.x = CONFIG.RIGHT - radius;
+                didCollide = true;
+            } else if (ballPos.x - radius < CONFIG.LEFT) {
+                vel.x = -Math.abs(vel.x);
+                ball.position.x = CONFIG.LEFT + radius;
+                didCollide = true;
+            }
+
+            // Top Wall
+            if (ballPos.y + radius > CONFIG.TOP) {
+                vel.y = -Math.abs(vel.y);
+                ball.position.y = CONFIG.TOP - radius;
+                didCollide = true;
+            } 
+            // Floor Wall (Check against the invisible boundary, not the mesh itself)
+            else if (ballPos.y - radius < CONFIG.FLOOR_Y) {
+                // Lost a life!
+                loseLife();
+                return; // Stop further processing if life is lost
+            }
+
+            // Anti-stall (Nudge Y velocity)
+            if (Math.abs(vel.y) < CONFIG.BALL_Y_ANTI_STALL) {
+                vel.y = Math.sign(vel.y) * CONFIG.BALL_Y_ANTI_STALL;
+            }
+            
+            if (didCollide) {
+                // Play sound on wall bounce
+                playBrickSound();
+            }
+        }
+
+        function updateBall(dt) {
+            const vel = ball.userData.velocity;
+            
+            // 1. Update Position
+            ball.position.addScaledVector(vel, dt);
+
+            // 2. Update Trail
+            ballTrail.push(ball.position.clone());
+            if (ballTrail.length > 12) {
+                ballTrail.shift();
+            }
+            
+            // 3. Update Pulse Animation
+            ballPulseTimer += dt;
+            const pulseFactor = 0.4 + 0.35 * (0.5 + 0.5 * Math.sin(ballPulseTimer * 8));
+            ball.material.emissiveIntensity = pulseFactor;
+        }
+        
+        function updatePaddle(dt) {
+            // 1. Update Position (Input driven, but we update it here)
+            // 2. Update Squash/Stretch
+            if (paddleSquashTimer > 0) {
+                paddleSquashTimer -= dt;
+                // Sine curve for squash/stretch (0 -> 1 -> 0)
+                const squashFactor = 0.5 * (1 + Math.sin(paddleSquashTimer * Math.PI)); 
+                
+                // Scale factor: 1.0 (normal) -> 1.1 (stretched) -> 0.9 (squashed)
+                const scaleY = 1.0 + 0.1 * squashFactor;
+                const scaleX = 1.0 + 0.1 * (1 - squashFactor);
+                
+                paddle.scale.set(scaleX, scaleY, 1);
+                paddle.userData.originalScale.copy(paddle.scale);
+            } else {
+                // Return to normal scale smoothly
+                paddle.scale.lerp(paddle.userData.originalScale, dt * 5);
+            }
+        }
+
+        function updateParticles(dt) {
+            const positions = particleGeometry.attributes.position.array;
+            let particleCount = 0;
+
+            for (let i = 0; i < particleGeometry.attributes.position.count; i++) {
+                const i3 = i * 3;
+                let x = positions[i3];
+                let y = positions[i3 + 1];
+                let z = positions[i3 + 2];
+                
+                // Simple physics: Gravity (downwards) and drag/damping
+                const gravity = 9.8 * 0.5; // Scaled gravity
+                
+                // Apply velocity (using a fixed velocity approximation for simplicity)
+                // Initial velocity is set when created, but we update it here based on accumulated motion
+                // Since we are using a single BufferGeometry, we need to store velocity somewhere, 
+                // but for simplicity, let's just apply forces relative to their starting position/velocity.
+                
+                // For this implementation, we'll use a simple decay/force model:
+                
+                // Apply gravity to Y
+                y -= (gravity * dt * 0.5); 
+                
+                // Apply slight drag/damping to X and Z
+                x *= (1 - 0.1 * dt);
+                z *= (1 - 0.1 * dt);
+                
+                // Fade out (Opacity control is better done via PointsMaterial.opacity, but we'll update position for now)
+                
+                positions[i3] = x;
+                positions[i3 + 1] = y;
+                positions[i3 + 2] = z;
+                particleCount++;
+            }
+            
+            particleGeometry.attributes.position.needsUpdate = true;
+        }
+
+        function updateCamera(dt) {
+            if (cameraShakeTimer > 0) {
+                // Camera Shake
+                const shakeAmount = 0.05 * Math.exp(-dt * 8); // Decay over 0.35s (8/0.35 ~ 22.8)
+                camera.position.x += (Math.random() - 0.5) * 2 * shakeAmount;
+                camera.position.y += (Math.random() - 0.5) * 2 * shakeAmount;
+                camera.position.z += (Math.random() - 0.5) * 2 * shakeAmount;
+                cameraShakeTimer -= dt;
+            }
+
+            if (isCameraManual) {
+                // Manual Control: Orbit
+                const target = CONFIG.CAM_MANUAL_TARGET;
+                
+                // Calculate spherical coordinates from orbit params
+                const x = cameraOrbit.distance * Math.sin(cameraOrbit.pitch) * Math.sin(cameraOrbit.yaw);
+                const y = cameraOrbit.distance * Math.cos(cameraOrbit.pitch);
+                const z = cameraOrbit.distance * Math.sin(cameraOrbit.pitch) * Math.cos(cameraOrbit.yaw);
+                
+                camera.position.set(x, y + target.y, z + target.z);
+                camera.lookAt(target);
+
+            } else {
+                // Auto Control
+                const paddleX = paddle.position.x;
+                const paddleY = paddle.position.y + 0.1; // Slight offset above paddle center
+                
+                // 1. Lerp X towards paddle X
+                camera.position.x += (paddleX * CONFIG.CAM_AUTO_LERP_FACTOR - camera.position.x) * CONFIG.CAM_AUTO_LERP_FACTOR;
+                
+                // 2. Y offset decay (starts at 0.3, decays towards 0)
+                const yOffset = 0.3 * Math.exp(-dt * CONFIG.CAM_AUTO_Y_DECAY_RATE);
+                camera.position.y = paddleY + yOffset;
+                
+                // 3. Z position (Keep it relatively fixed behind the action)
+                camera.position.z = 14; 
+
+                // 4. Look at the target (slightly above paddle center)
+                camera.lookAt(new THREE.Vector3(paddleX, paddleY, 0));
+            }
+        }
+
+        // ====================================================================
+        // GAME FLOW MANAGEMENT
+        // ====================================================================
+
+        function gameLoop(time) {
+            const dt = (time - lastTime) / 1000;
+            lastTime = time;
+            
+            // Clamp delta time
+            const clampedDt = Math.min(dt, 0.05);
+
+            // 1. State-dependent updates
+            if (state === GAME_STATE.PLAYING || state === GAME_STATE.PAUSED) {
+                updateBall(clampedDt);
+                updatePaddle(clampedDt);
+                updateCamera(clampedDt);
+
+                // Physics Checks
+                handleWallCollisions(clampedDt);
+                handlePaddleCollision(clampedDt);
+                handleBrickCollision(clampedDt);
+                
+                // Update Trail visualization based on current state/movement
+                if (state === GAME_STATE.PLAYING) {
+                    // Update trail positions (already done in updateBall, but we ensure it's there)
+                }
+            } else if (state === GAME_STATE.READY) {
+                // Ball sits on paddle, minimal movement/pulse
+                updateBall(clampedDt);
+                updatePaddle(clampedDt);
+                updateCamera(clampedDt);
+            } else if (state === GAME_STATE.START || state === GAME_STATE.GAMEOVER || state === GAME_STATE.VICTORY) {
+                // Static objects, only update camera/effects if needed
+                updateCamera(clampedDt);
+                if (state === GAME_STATE.START && isPaused) {
+                    // Ensure ball is centered and pulsing slightly in START screen
+                    ball.position.y = CONFIG.PADDLE_Y + CONFIG.BALL_R;
+                }
+            }
+
+            // 2. Global Updates
+            updateParticles(clampedDt);
+            
+            // 3. Rendering
+            renderer.render(scene, camera);
+
+            // 4. Request Next Frame
+            requestAnimationFrame(gameLoop);
+        }
+
+        function handleVictory() {
+            state = GAME_STATE.VICTORY;
+            playVictorySound();
+            updateOverlay(true);
+            // Ensure ball stops moving immediately on victory
+            ball.userData.velocity.set(0, 0, 0);
+        }
+
+        function loseLife() {
+            lives--;
+            playLifeSound();
+            
+            // Camera Shake effect
+            cameraShakeTimer = 0.35; 
+            
+            if (lives <= 0) {
+                handleGameOver();
+            } else {
+                // Reset ball and paddle, transition to READY state
+                resetBallAndPaddle();
+                state = GAME_STATE.READY;
+                updateOverlay(true);
+            }
+        }
+
+        function handleGameOver() {
+            state = GAME_STATE.GAMEOVER;
+            playLifeSound(); // Replay life sound for emphasis
+            updateOverlay(true);
+        }
+
+        function resetGame() {
+            // Reset state variables
+            state = GAME_STATE.START;
+            score = 0;
+            lives = CONFIG.MAX_LIVES;
+            isPaused = true;
+            
+            // Reset objects
+            resetBallAndPaddle();
+            
+            // Reset Brick Visuals
+            bricks.forEach(brick => {
+                brick.visible = true;
+                brick.scale.copy(brick.userData.originalScale);
+                // Reset flash timer
+                currentBrickFlash.set(brick, { startTime: 0, originalScale: brick.userData.originalScale.clone() });
+            });
+            
+            // Reset Camera to default auto position
+            camera.position.copy(CONFIG.CAM_BASE_POS);
+            camera.lookAt(CONFIG.CAM_TARGET);
+            cameraOrbit = { yaw: 0, pitch: 0.519, distance: 16.16 };
+            
+            // Update HUD
+            updateHUD();
+            updateOverlay(true);
+        }
+
+        // ====================================================================
+        // AUDIO FUNCTIONS
+        // ====================================================================
+
+        function initAudio() {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioContext) {
+                isAudioUnlocked = true;
+            }
+        }
+
+        function createSound(freq, type, duration, volume, time = 0) {
+            if (!isAudioUnlocked) return;
+
+            const osc = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioContext.currentTime + time);
+            
+            gainNode.gain.setValueAtTime(volume, audioContext.currentTime + time);
+            
+            // Envelope (Attack & Decay)
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + duration);
+            
+            osc.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            osc.start(audioContext.currentTime + time);
+            osc.stop(audioContext.currentTime + duration + 0.01);
+        }
+
+        function playPaddleSound() {
+            const time = 0;
+            const duration = 0.07;
+            const volume = 0.18;
+            
+            // Base (880 Hz Square)
+            createSound(880, 'square', duration, volume, time);
+            // Octave (1760 Hz Square, 25% volume)
+            createSound(1760, 'square', duration, volume * 0.25, time);
+        }
+
+        function playBrickSound() {
+            const time = 0;
+            const duration = 0.09;
+            const volume = 0.22;
+            
+            // Base (660 Hz Triangle)
+            createSound(660, 'triangle', duration, volume, time);
+            // Octave (1320 Hz Triangle, 25% volume)
+            createSound(1320, 'triangle', duration, volume * 0.25, time);
+        }
+
+        function playLifeSound() {
+            const time = 0;
+            const duration = 0.35;
+            const volume = 0.22;
+            
+            // Base (220 Hz Sawtooth)
+            createSound(220, 'sawtooth', duration, volume, time);
+            // Octave (440 Hz Sawtooth, 25% volume)
+            createSound(440, 'sawtooth', duration, volume * 0.25, time);
+        }
+
+        function playVictorySound() {
+            const time = 0;
+            const duration = 0.12;
+            const volume = 0.25;
+            
+            // Base (523 Hz Sine)
+            createSound(523, 'sine', duration, volume, time);
+            // Mid (659 Hz Sine)
+            createSound(659, 'sine', duration, volume, time + 0.03);
+            // High (784 Hz Sine)
+            createSound(784, 'sine', duration, volume, time + 0.06);
+        }
+
+        // ====================================================================
+        // VISUAL EFFECTS FUNCTIONS
+        // ====================================================================
+
+        function createParticleBurst(row, position) {
+            const count = 10;
+            const positions = new Float32Array(count * 3);
+            
+            // Use the brick's color for the burst
+            const color = bricks.find(b => b.userData.row === row).userData.originalColor;
+            
+            for (let i = 0; i < count; i++) {
+                const i3 = i * 3;
+                // Initial position slightly offset from brick center
+                positions[i3] = position.x + (Math.random() - 0.5) * 0.3;
+                positions[i3 + 1] = position.y + (Math.random() - 0.5) * 0.3;
+                positions[i3 + 2] = position.z + (Math.random() - 0.5) * 0.3;
+            }
+            
+            // Temporary Particle System setup (reusing the main one)
+            particleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            particleSystem.userData.initialPositions = particleGeometry.attributes.position.array.slice();
+            particleSystem.userData.color = color;
+            particleSystem.userData.count = count;
+            
+            // Reset particle system state for the burst
+            particleSystem.visible = true;
+        }
+
+        function updateParticleBurst(dt) {
+            const positions = particleGeometry.attributes.position.array;
+            const initialPositions = particleSystem.userData.initialPositions;
+            const count = particleSystem.userData.count;
+            const color = particleSystem.userData.color;
+            
+            let opacity = 1.0;
+            // Fade over 0.5 seconds
+            opacity = Math.max(0, 1.0 - (dt / 0.5)); 
+            
+            particleSystem.material.opacity = opacity;
+            
+            for (let i = 0; i < count; i++) {
+                const i3 = i * 3;
+                
+                // Calculate initial velocity vector (random direction)
+                const randX = (Math.random() - 0.5) * 2;
+                const randY = (Math.random() - 0.5) * 2;
+                const randZ = (Math.random() - 0.5) * 2;
+                
+                // Apply gravity and drag to initial vector
+                const gravity = 9.8 * 0.5; 
+                
+                // New position = Initial Position + (Velocity * dt) - (0.5 * g * dt^2)
+                positions[i3] = initialPositions[i3] + randX * dt;
+                positions[i3 + 1] = initialPositions[i3 + 1] + randY * dt - (0.5 * gravity * dt * dt);
+                positions[i3 + 2] = initialPositions[i3 + 2] + randZ * dt;
+            }
+            
+            particleGeometry.attributes.position.needsUpdate = true;
+
+            // Hide if fully faded
+            if (opacity <= 0.01) {
+                particleSystem.visible = false;
+            }
+        }
+        
+        function updateBrickFlash(dt) {
+            const currentTime = clock.elapsedTime;
+            
+            currentBrickFlash.forEach((data, brick) => {
+                const elapsed = currentTime - data.startTime;
+                const originalScale = data.originalScale;
+                
+                // Flash Cycle: 0.25s duration
+                const cycleTime = elapsed % 0.25;
+                
+                let scaleFactor;
+                if (cycleTime < 0.125) {
+                    // Scale up quickly (0 -> 1)
+                    scaleFactor = 1 + (cycleTime / 0.125) * 0.1; 
+                } else if (cycleTime < 0.25) {
+                    // Scale down quickly (1 -> 0)
+                    scaleFactor = 1 - ((cycleTime - 0.125) / 0.125) * 0.1;
+                } else {
+                    // Hold at 0 scale briefly (0.25 -> 0.375)
+                    scaleFactor = 0.0;
+                }
+                
+                // Apply scale, but ensure it doesn't dip below 0 if it should be visible
+                brick.scale.copy(originalScale).multiplyScalar(scaleFactor);
+                
+                // If we passed the full cycle (0.25s), the next frame will reset it, 
+                // but we can also handle visibility here if needed (though handled in collision check)
+            });
+        }
+
+
+        // ====================================================================
+        // HUD & UI FUNCTIONS
+        // ====================================================================
+
+        function updateHUD() {
+            document.getElementById('score-display').textContent = `Score: ${score}`;
+            
+            const livesDisplay = document.getElementById('lives-display');
+            let hearts = '';
+            for (let i = 0; i < CONFIG.MAX_LIVES; i++) {
+                hearts += (i < lives) ? '<span class="heart">♥</span>' : '<span class="heart" style="opacity: 0.3;">·</span>';
+            }
+            livesDisplay.innerHTML = `Lives: ${hearts}`;
+            
+            document.getElementById('camera-mode-indicator').textContent = 
+                isCameraManual ? "CAM: MANUAL" : "CAM: AUTO";
+            
+            document.getElementById('mute-indicator').textContent = isMuted ? "🔇" : "🔊";
+        }
+
+        function updateOverlay(show) {
+            const overlay = document.getElementById('game-overlay');
+            if (show) {
+                overlay.style.opacity = '1';
+                overlay.style.pointerEvents = 'auto';
+            } else {
+                overlay.style.opacity = '0';
+                overlay.style.pointerEvents = 'none';
+            }
+        }
+
+        function updateOverlayContent() {
+            const titleEl = document.getElementById('overlay-title');
+            const subtitleEl = document.getElementById('overlay-subtitle');
+
+            switch (state) {
+                case GAME_STATE.START:
+                    titleEl.textContent = "3D BREAKOUT";
+                    subtitleEl.textContent = "Press SPACE to Start";
+                    break;
+                case GAME_STATE.READY:
+                    titleEl.textContent = "READY!";
+                    subtitleEl.textContent = "Press SPACE to Launch";
+                    break;
+                case GAME_STATE.PLAYING:
+                    // Overlay is usually hidden, but if we want a persistent HUD element:
+                    titleEl.style.display = 'none';
+                    subtitleEl.style.display = 'none';
+                    return;
+                case GAME_STATE.PAUSED:
+                    titleEl.textContent = "PAUSED";
+                    subtitleEl.textContent = "Press SPACE to Resume";
+                    break;
+                case GAME_STATE.GAMEOVER:
+                    titleEl.textContent = "GAME OVER";
+                    subtitleEl.textContent = `Final Score: ${score}. Press SPACE to Restart`;
+                    break;
+                case GAME_STATE.VICTORY:
+                    titleEl.textContent = "VICTORY!";
+                    subtitleEl.textContent = `Score: ${score}. Press SPACE to Play Again`;
+                    break;
+            }
+        }
+
+        // ====================================================================
+        // INPUT HANDLING
+        // ====================================================================
+
+        function handleKeyDown(event) {
+            if (event.key === ' ' || event.key === 'Spacebar') {
+                event.preventDefault();
+                if (state === GAME_STATE.START || state === GAME_STATE.GAMEOVER || state === GAME_STATE.VICTORY) {
+                    // Start/Restart
+                    if (state === GAME_STATE.START) {
+                        // Start immediately transitions to READY, which launches on next step, but we force launch here for responsiveness
+                        launchBall(); 
+                    } else {
+                        // Restart from GO/VICTORY
+                        resetGame();
+                    }
+                } else if (state === GAME_STATE.READY) {
+                    // Launch
+                    launchBall();
+                } else if (state === GAME_STATE.PLAYING) {
+                    // Pause
+                    state = GAME_STATE.PAUSED;
+                    updateOverlay(true);
+                    isPaused = true;
+                } else if (state === GAME_STATE.PAUSED) {
+                    // Resume
+                    state = GAME_STATE.PLAYING;
+                    updateOverlay(false);
+                    isPaused = false;
+                }
+            } else if (event.key === 'c' || event.key === 'C') {
+                toggleCameraMode();
+            } else if (event.key === 'r' || event.key === 'R') {
+                // Reset Camera OR Full Reset if not in START/GO/VICTORY
+                if (state === GAME_STATE.START || state === GAME_STATE.GAMEOVER || state === GAME_STATE.VICTORY) {
+                    resetGame();
+                } else {
+                    // Reset camera position/orientation only
+                    camera.position.copy(CONFIG.CAM_BASE_POS);
+                    camera.lookAt(CONFIG.CAM_TARGET);
+                    cameraOrbit = { yaw: 0, pitch: 0.519, distance: 16.16 };
+                    if (isCameraManual) {
+                        // If manual, ensure the manual controller reflects the reset state
+                        // (This is implicitly handled by setting the orbit params)
+                    }
+                }
+            } else if (event.key === 'm' || event.key === 'M') {
+                toggleMute();
+            }
+            
+            // Movement regardless of state (unless START screen is blocking input)
+            if (event.key === 'ArrowLeft' || event.key === 'ArrowRight' || event.key === 'a' || event.key === 'd') {
+                event.preventDefault();
+                if (state === GAME_STATE.PLAYING || state === GAME_STATE.READY || state === GAME_STATE.PAUSED) {
+                    let moveX = 0;
+                    if (event.key === 'ArrowLeft' || event.key === 'a') moveX = -1;
+                    if (event.key === 'ArrowRight' || event.key === 'd') moveX = 1;
+                    
+                    // Apply movement directly to paddle position
+                    paddle.position.x += moveX * CONFIG.PADDLE_SPEED * (event.repeat ? 0.5 : 1);
+                    
+                    // Clamp paddle position
+                    const minX = CONFIG.LEFT + 1.2;
+                    const maxX = CONFIG.RIGHT - 1.2;
+                    paddle.position.x = Math.max(minX, Math.min(maxX, paddle.position.x));
+                }
+            }
+        }
+
+        function handleWheel(event) {
+            if (isCameraManual) {
+                event.preventDefault();
+                // Zoom control
+                let delta = event.deltaY * 0.01; // Sensitivity multiplier
+                let newDist = cameraOrbit.distance - delta;
+                
+                // Clamp distance
+                newDist = Math.max(CONFIG.CAM_MANUAL_DIST_CLAMP.min, Math.min(CONFIG.CAM_MANUAL_DIST_CLAMP.max, newDist));
+                cameraOrbit.distance = newDist;
+            }
+        }
+
+        function handleMouseDown(event) {
+            if (state === GAME_STATE.PLAYING || state === GAME_STATE.READY || state === GAME_STATE.PAUSED) {
+                if (!isCameraManual) {
+                    isDragging = true;
+                    previousMousePosition.x = event.clientX;
+                    previousMousePosition.y = event.clientY;
+                }
+            }
+        }
+
+        function handleMouseUp() {
+            isDragging = false;
+        }
+
+        function handleMouseMove(event) {
+            if (!isDragging || isCameraManual) return;
+            
+            const deltaX = event.clientX - previousMousePosition.x;
+            const deltaY = event.clientY - previousMousePosition.y;
+
+            // Rotation sensitivity (adjust as needed)
+            const rotationSpeed = 0.005;
+
+            // Yaw (Y-axis rotation around world Y)
+            cameraOrbit.yaw -= deltaX * rotationSpeed;
+            
+            // Pitch (X-axis rotation, constrained)
+            cameraOrbit.pitch -= deltaY * rotationSpeed;
+            
+            // Clamp Pitch
+            cameraOrbit.pitch = Math.max(CONFIG.CAM_MANUAL_PITCH_CLAMP.min, Math.min(CONFIG.CAM_MANUAL_PITCH_CLAMP.max, cameraOrbit.pitch));
+
+            previousMousePosition.x = event.clientX;
+            previousMousePosition.y = event.clientY;
+        }
+        
+        // ====================================================================
+        // CONTROL TOGGLES
+        // ====================================================================
+
+        function toggleCameraMode() {
+            isCameraManual = !isCameraManual;
+            
+            if (isCameraManual) {
+                // Switch to manual: Capture current state into orbit variables
+                // 1. Calculate spherical coordinates from current camera position relative to target
+                const dir = new THREE.Vector3().subVectors(camera.position, CONFIG.CAM_TARGET);
+                
+                // 2. Calculate distance
+                const distance = dir.length();
+                
+                // 3. Calculate yaw (angle in XZ plane, relative to positive Z axis)
+                const yaw = Math.atan2(dir.x, dir.z);
+                
+                // 4. Calculate pitch (angle from XY plane)
+                // Pitch = acos(Y / Distance)
+                const pitch = Math.acos(dir.y / distance);
+
+                // 5. Apply and clamp
+                cameraOrbit.distance = distance;
+                cameraOrbit.yaw = yaw;
+                cameraOrbit.pitch = pitch;
+                
+                // Clamp the newly captured values just in case
+                cameraOrbit.pitch = Math.max(CONFIG.CAM_MANUAL_PITCH_CLAMP.min, Math.min(CONFIG.CAM_MANUAL_PITCH_CLAMP.max, cameraOrbit.pitch));
+                cameraOrbit.distance = Math.max(CONFIG.CAM_MANUAL_DIST_CLAMP.min, Math.min(CONFIG.CAM_MANUAL_DIST_CLAMP.max, cameraOrbit.distance));
+
+            } else {
+                // Switch to auto: Camera will naturally lerp back to paddle/base position
+                // We don't need to change orbit variables, but we can reset them to the base if desired
+                cameraOrbit = { yaw: 0, pitch: 0.519, distance: 16.16 };
+            }
+            
+            updateHUD();
+        }
+        
+        function toggleMute() {
+            isMuted = !isMuted;
+            updateHUD();
+        }
+
+
+        // ====================================================================
+        // MAIN EXECUTION
+        // ====================================================================
+
+        function main() {
+            // 1. Initialize Audio Context (needs user gesture)
+            initAudio();
+            
+            // 2. Initialize Three.js Scene, Renderer, Camera
+            const { scene, renderer: rendererInstance } = initThree();
+            
+            // 3. Set up Event Listeners
+            window.addEventListener('resize', onWindowResize, false);
+            document.addEventListener('keydown', handleKeyDown);
+            document.addEventListener('wheel', handleWheel);
+            document.addEventListener('mousedown', handleMouseDown);
+            document.addEventListener('mouseup', handleMouseUp);
+            document.addEventListener('mousemove', handleMouseMove);
+            document.addEventListener('click', () => {
+                // Unlock audio on first click if it hasn't been unlocked yet
+                if (!isAudioUnlocked) {
+                    initAudio();
+                    isAudioUnlocked = true;
+                }
+                // Ensure overlay is visible on click if game is running but paused/ready
+                if (state === GAME_STATE.PAUSED || state === GAME_STATE.READY) {
+                    updateOverlay(true);
+                }
+            }, { once: true }); // Use once to ensure it only fires on the very first click
+
+            // 4. Initial State Setup
+            resetGame(); // Sets state to START, updates HUD, shows overlay
+            
+            // 5. Start the Game Loop
+            lastTime = performance.now();
+            requestAnimationFrame(gameLoop);
+        }
+        
+        function onWindowResize() {
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            
+            renderer.setSize(width, height);
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+        }
+
+        // Start everything!
+        main();
+
+    </script>
+</body>
+</html>

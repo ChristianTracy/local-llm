@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Breakout 3D — 11 Model Gallery</title>
+<style>
+  :root {
+    --bg: #0c1118;
+    --card: #151c27;
+    --card-border: #232e42;
+    --text: #e6eaf0;
+    --muted: #8a97ad;
+    --accent: #4f8cff;
+    --pass: #2ecc71;
+    --partial: #f39c12;
+    --fail: #e74c3c;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  /* ——— polished header ——— */
+  .site-header{
+    position:sticky; top:0; z-index:40;
+    backdrop-filter: blur(12px) saturate(1.4);
+    background: rgba(12,17,24,0.88);
+    border-bottom:1px solid var(--card-border);
+  }
+  .header-inner{
+    max-width:1280px; margin:0 auto; padding:14px 20px;
+    display:flex; align-items:center; gap:18px; flex-wrap:wrap;
+  }
+  .brand{display:flex; align-items:center; gap:12px; text-decoration:none; color:var(--text)}
+  .brand:hover{text-decoration:none}
+  .brand-icon{
+    width:38px; height:38px; display:grid; place-items:center;
+    border-radius:10px;
+    background: linear-gradient(135deg,var(--accent),#7c5cff);
+    box-shadow:0 4px 16px rgba(79,140,255,0.35);
+    flex-shrink:0; overflow:hidden;
+  }
+  .brand-icon svg{ width:26px; height:26px; display:block; shape-rendering:crispEdges; }
+  .brand-text{display:flex; flex-direction:column; line-height:1.1}
+  .brand-title{font-size:16px; font-weight:800; letter-spacing:-0.3px}
+  .brand-sub{font-size:11px; color:var(--muted); margin-top:2px}
+  .tabs{display:flex; gap:6px; margin-left:auto; flex-wrap:wrap}
+  .tab{
+    font-size:12px; font-weight:700; letter-spacing:0.2px;
+    padding:7px 14px; border-radius:999px;
+    border:1px solid var(--card-border); background:#1a2333; color:var(--muted);
+    text-decoration:none; transition:all .15s;
+  }
+  .tab:hover{color:var(--text); border-color:#2e3d5c; background:#1e2d4a; text-decoration:none}
+  .tab.active{background:var(--accent); border-color:var(--accent); color:#fff; box-shadow:0 2px 10px rgba(79,140,255,0.4)}
+  .header-actions{display:flex; gap:8px; align-items:center}
+  .icon-link{font-size:11px; font-weight:600; padding:5px 9px; border-radius:999px; border:1px solid var(--card-border); background:transparent; color:var(--muted); text-decoration:none}
+  .icon-link:hover{color:var(--text); border-color:var(--accent); text-decoration:none}
+  .subbar{
+    max-width:1280px; margin:0 auto; padding:10px 20px 12px;
+    color:var(--muted); font-size:12px; line-height:1.5;
+    border-bottom:1px solid var(--card-border);
+  }
+  .subbar code{background:#0f141e;border:1px solid var(--card-border);border-radius:4px;padding:1px 5px;font-size:11px}
+  .hint {
+    max-width: 1280px; margin: 0 auto; padding: 14px 20px;
+    color: var(--muted); font-size: 13px; line-height: 1.6;
+    background: rgba(79,140,255,0.08); border-bottom: 1px solid var(--card-border);
+  }
+  .hint strong { color: var(--text); }
+  .hint kbd { background: #1e2635; border: 1px solid #2a3448; border-bottom-width: 2px; border-radius: 4px; padding: 1px 6px; font-size: 12px; color: var(--text); }
+  main { max-width: 1280px; margin: 0 auto; padding: 20px; }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+    gap: 20px;
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  .card-head {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    padding: 10px 12px; gap: 8px;
+    border-bottom: 1px solid var(--card-border);
+    background: rgba(255,255,255,0.02);
+  }
+  .card-head-left { display: flex; align-items: flex-start; gap: 8px; min-width: 0; flex:1 }
+  .rank {
+    width: 26px; height: 26px; flex-shrink: 0;
+    display: grid; place-items: center;
+    border-radius: 50%; font-size: 12px; font-weight: 700;
+    background: #1e2635; border: 1px solid #2a3448; color: var(--muted);
+    margin-top: 2px;
+  }
+  .rank.top { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .model-meta{display:flex; flex-direction:column; min-width:0; line-height:1.1; flex:1}
+  .model-name { font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .family{font-size:10px; color:var(--muted); white-space:normal; word-break:break-word; line-height:1.25; margin-top:2px}
+  .card-head-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .score { font-size: 12px; color: var(--muted); }
+  .score strong { color: var(--text); }
+  .badge {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase;
+    padding: 3px 7px; border-radius: 999px; border: 1px solid;
+  }
+  .badge.pass { color: var(--pass); border-color: rgba(46,204,113,0.4); background: rgba(46,204,113,0.12); }
+  .badge.partial { color: var(--partial); border-color: rgba(243,156,18,0.4); background: rgba(243,156,18,0.12); }
+  .badge.fail { color: var(--fail); border-color: rgba(231,76,60,0.4); background: rgba(231,76,60,0.12); }
+  .badge.missing { color: var(--muted); border-color: var(--card-border); background: #1a2333; }
+  .frame-wrap {
+    position: relative;
+    width: 100%; aspect-ratio: 4 / 3;
+    background: #10141c;
+    overflow: hidden;
+    cursor: pointer;
+  }
+  .frame-scale {
+    position: absolute; inset: 0;
+    width: 800px; height: 600px;
+    transform-origin: top left;
+    border: 0; display: block;
+    background: #10141c;
+    pointer-events: auto;
+  }
+  .frame-missing {
+    position: absolute; inset: 0;
+    display: grid; place-items: center;
+    color: var(--muted); font-size: 13px; text-align: center; padding: 20px;
+    background: repeating-linear-gradient(45deg, #10141c, #10141c 12px, #131927 12px, #131927 24px);
+  }
+  .card-stats{
+    display:flex; gap:6px; flex-wrap:wrap;
+    padding:8px 12px; border-top:1px solid var(--card-border);
+    background: rgba(255,255,255,0.02);
+  }
+  .stat{
+    font-size:11px; padding:3px 7px; border-radius:999px;
+    border:1px solid var(--card-border); background:#1a2333; color:var(--muted);
+    display:inline-flex; gap:4px; align-items:center;
+  }
+  .stat strong{color:var(--text)}
+  .stat.func{border-color:rgba(79,140,255,0.35)}
+  .stat.qual{border-color:rgba(46,204,113,0.3)}
+  .stat.loc{border-color:rgba(138,151,173,0.3)}
+  .card-foot {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 12px; gap: 8px;
+    border-top: 1px solid var(--card-border);
+    background: rgba(255,255,255,0.02);
+  }
+  .card-foot span { font-size: 11px; color: var(--muted); }
+  .btn {
+    font: inherit; font-size: 12px; font-weight: 700;
+    padding: 6px 10px; border-radius: 8px;
+    border: 1px solid #2a3448; background: #1e2635; color: var(--text);
+    cursor: pointer;
+  }
+  .btn:hover { background: #243044; }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn.primary:hover { background: #3f7af0; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  /* Modal */
+  .modal-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7);
+    display: none; align-items: center; justify-content: center;
+    padding: 20px; z-index: 50;
+  }
+  .modal-backdrop.open { display: flex; }
+  .modal {
+    background: #0f141e; border: 1px solid var(--card-border); border-radius: 12px;
+    overflow: hidden; max-width: min(840px, 96vw); width: 840px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+  }
+  .modal-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 14px; border-bottom: 1px solid var(--card-border);
+    background: rgba(255,255,255,0.02);
+  }
+  .modal-head h2 { margin: 0; font-size: 14px; }
+  .modal-head p { margin: 2px 0 0; font-size: 12px; color: var(--muted); }
+  .modal-frame-wrap {
+    background: #10141c; display: grid; place-items: center; padding: 16px;
+  }
+  .modal-frame-wrap iframe {
+    width: 800px; height: 600px; border: 0; display: block;
+    background: #10141c; max-width: 100%;
+  }
+  .close { background: transparent; border: 1px solid var(--card-border); color: var(--muted); }
+  footer { max-width: 1280px; margin: 0 auto; padding: 18px 20px 28px; color: var(--muted); font-size: 12px; text-align: center; }
+</style>
+</head>
+<body>
+<header class="site-header">
+  <div class="header-inner">
+    <a class="brand" href="index.html">
+      <div class="brand-icon" aria-hidden="true"><svg viewBox="0 0 12 12" role="img"><rect x="5" y="1" width="2" height="1" fill="#9feaff"/><rect x="4" y="2" width="4" height="1" fill="#9feaff"/><rect x="3" y="3" width="6" height="1" fill="#9feaff"/><rect x="3" y="4" width="3" height="4" fill="#4f8cff"/><rect x="6" y="4" width="3" height="4" fill="#2f6fe0"/><rect x="3" y="4" width="1" height="4" fill="#c9ecff" opacity="0.55"/><rect x="4" y="8" width="4" height="1" fill="#1a2333"/><rect x="5" y="9" width="2" height="1" fill="#1a2333"/></svg></div>
+      <div class="brand-text">
+        <span class="brand-title">Breakout 3D Lab</span>
+        <span class="brand-sub">6 verified playable · Three.js 0.160.0 · rAF + Clock Δ</span>
+      </div>
+    </a>
+    <nav class="tabs" aria-label="Primary">
+      <a class="tab" href="../index.html">⌂ Home</a>
+      <a class="tab active" href="index.html">◧ Gallery</a>
+      <a class="tab" href="report.html">Report</a>
+      <a class="tab" href="models-configurations.html">Configurations</a>
+    </nav>
+    <div class="header-actions">
+      <a class="icon-link" href="prompt.md">prompt</a>
+      <a class="icon-link" href="results.json">json</a>
+      <a class="icon-link" href="report.md" title="markdown">md</a>
+    </div>
+  </div>
+</header>
+<div class="subbar">One <code>800×600</code> Three.js game per model (<code>three@0.160.0</code> via <code>unpkg</code> CDN + <code>Clock.getDelta()</code> ≤ <code>0.05</code>). Click a card to focus → <kbd>←</kbd> <kbd>→</kbd> / <kbd>A</kbd> <kbd>D</kbd> + <kbd>Space</kbd> · <kbd>C</kbd> camera · drag/wheel in manual · <kbd>M</kbd> mute · <strong>Play full-size</strong> opens 800×600 modal. <span style="opacity:0.7">· Requires <strong>internet</strong> (CDN) + <code>http://</code> (<code>python -m http.server</code>) — ES modules are blocked on <code>file://</code> · Host: <code>A320M-HD2</code> · <code>R5 1600</code> · <code>RTX 4060 Ti 16GB</code> · details in <a href="report.html" style="color:var(--accent)">Report → Environment</a></span></div>
+<div class="hint">
+  <strong>How to play:</strong> Click any game to focus its iframe (browser routes keyboard to the focused iframe). <kbd>Space</kbd> launches / pauses, <kbd>←</kbd>/<kbd>→</kbd> or <kbd>A</kbd>/<kbd>D</kbd> moves the paddle, <kbd>C</kbd> toggles auto/manual camera (drag to orbit, wheel to zoom, <kbd>R</kbd> resets), <kbd>M</kbd> mutes. Only one game receives keyboard at a time — that's normal for iframes. Serve via <code>python -m http.server</code> (CDN + ES modules need <code>http://</code>, not <code>file://</code>).
+</div>
+<main>
+  <div id="grid" class="grid"></div>
+</main>
+
+<div id="backdrop" class="modal-backdrop" aria-hidden="true">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-head">
+      <div>
+        <h2 id="modalTitle">—</h2>
+        <p id="modalSub">—</p>
+      </div>
+      <button id="closeBtn" class="btn close" type="button">Close · Esc</button>
+    </div>
+    <div class="modal-frame-wrap">
+      <iframe id="modalFrame" title="Breakout 3D full-size" loading="lazy"></iframe>
+    </div>
+  </div>
+</div>
+
+<footer>All games are <code>models/*/index.html</code> — byte-identical, embedded via &lt;iframe&gt; without modification. 5 builds fail at runtime (fatal JS errors) — playable: the 6 green cards. · Host: <code>A320M-HD2 · R5 1600 · RTX 4060 Ti 16GB</code> · <code>CachyOS 7.2.0-1</code></footer>
+
+<script>
+  // Embedded from results.json + wc -l + headless-Chromium runtime test (no fetch so file:// works for the gallery shell; games themselves need http+CDN). Sorted by rank.
+  // loc = wc -l models/*/index.html ; functionality = verified playability + spec compliance; codeQuality = structure/loop/fidelity/readability (0-10 subjective)
+  // Runtime proof (screenshots + console): RIDGE score 20/life-loss/manual-cam/0 errors; Q4XS score 80; Q3S score 10/life-loss; Q2 score 20; Q3XL score 30; 26A score 70.
+  // Failures (fatal pageerrors): qwen3-5 reading-'mesh' at load (menu-only); gpt diff.abs per-frame (black); ornith RoundedBoxGeometry-not-constructor (black); E4B THREE-undefined (no canvas).
+  const MODELS = [
+    { rank: 1,  model: "qwen3-8-RIDGE",             family: "Qwen3.8 · 27B",                          file: "models/qwen3-8-RIDGE/index.html",             score: 9.6, verdict: "pass",    loc: 906,  functionality: 9.6, codeQuality: 9.4, notes: "verified: launch, score 20, life loss, manual cam, 0 errors" },
+    { rank: 2,  model: "qwen3-8-Q4XS",              family: "Qwen3.8 · 27B",                          file: "models/qwen3-8-Q4XS/index.html",              score: 9.5, verdict: "pass",    loc: 1023, functionality: 9.5, codeQuality: 9.3, notes: "verified: score 80, trail, 0 errors" },
+    { rank: 3,  model: "qwen3-8-Q3S",               family: "Qwen3.8 · 27B",                          file: "models/qwen3-8-Q3S/index.html",               score: 9.4, verdict: "pass",    loc: 1056, functionality: 9.4, codeQuality: 9.2, notes: "verified: score 10, life loss, 0 errors" },
+    { rank: 4,  model: "qwen3-8-Q2",                family: "Qwen3.8 · 27B",                          file: "models/qwen3-8-Q2/index.html",                score: 9.2, verdict: "pass",    loc: 888,  functionality: 9.2, codeQuality: 8.8, notes: "verified: score 20, 0 errors" },
+    { rank: 5,  model: "qwen3-8-Q3XL",              family: "Qwen3.8 · 27B",                          file: "models/qwen3-8-Q3XL/index.html",              score: 9.1, verdict: "pass",    loc: 975,  functionality: 9.1, codeQuality: 8.6, notes: "verified: score 30, burst particles, 0 errors" },
+    { rank: 6,  model: "gemma4-26A4B",              family: "Gemma4 · 26B-A4B",                       file: "models/gemma4-26A4B/index.html",              score: 8.8, verdict: "pass",    loc: 696,  functionality: 8.8, codeQuality: 7.5, notes: "verified: score 70, manual cam, 0 errors — mono audio, frozen bursts" },
+    { rank: 7,  model: "qwen3-5-9b-Q8",             family: "Qwen3.5 · 9B",                           file: "models/qwen3-5-9b-Q8/index.html",             score: 3.0, verdict: "fail",    loc: 1163, functionality: 3.0, codeQuality: 8.8, notes: "FATAL: reading 'mesh' at load — menu-only, click dead" },
+    { rank: 8,  model: "gpt-20-Q8",                family: "GPT-OSS · 20B",                          file: "models/gpt-20-Q8/index.html",                score: 2.5, verdict: "fail",    loc: 657,  functionality: 2.5, codeQuality: 7.0, notes: "FATAL: diff.abs() per frame — black screen" },
+    { rank: 9,  model: "ornith-1-5-9b",             family: "Ornith 1.5 · 9B",                        file: "models/ornith-1-5-9b/index.html",             score: 2.0, verdict: "fail",    loc: 902,  functionality: 2.0, codeQuality: 9.0, notes: "FATAL: RoundedBoxGeometry never imported — black screen" },
+    { rank: 10, model: "tiel-coder-35b-IQ3_XXS",    family: "Tiel · 35B-A3B",                         file: "models/tiel-coder-35b-IQ3_XXS/index.html",    score: 1.8, verdict: "fail",    loc: 963,  functionality: 1.8, codeQuality: 8.5, notes: "FATAL: THREE never imported (addon only) — menu-only, no canvas" },
+    { rank: 11, model: "gemma4-E4B-Q8-uncesored",   family: "Gemma4 · E4B (dir keeps typo)",          file: "models/gemma4-E4B-Q8-uncesored/index.html",   score: 1.5, verdict: "fail",    loc: 1506, functionality: 1.5, codeQuality: 8.2, notes: "FATAL: THREE undefined, zero imports — no canvas" },
+  ];
+
+  const grid = document.getElementById('grid');
+  const backdrop = document.getElementById('backdrop');
+  const modalTitle = document.getElementById('modalTitle');
+  const modalSub = document.getElementById('modalSub');
+  const modalFrame = document.getElementById('modalFrame');
+  const closeBtn = document.getElementById('closeBtn');
+
+  function badgeClass(v) { return v === 'pass' ? 'pass' : v === 'partial' ? 'partial' : v === 'missing' ? 'missing' : 'fail'; }
+  function badgeLabel(v) { return v === 'pass' ? '✓ pass' : v === 'partial' ? '⚠ partial' : v === 'missing' ? '➖ missing' : '✕ fail'; }
+
+  function openModal(m) {
+    if (m.missing) return;
+    modalTitle.textContent = '#' + m.rank + ' — ' + m.model + ' · ' + m.family;
+    modalSub.textContent = m.score.toFixed(1) + ' / 10 · ' + m.verdict + ' · ' + m.file;
+    modalFrame.src = m.file;
+    backdrop.classList.add('open');
+    backdrop.setAttribute('aria-hidden', 'false');
+    modalFrame.onload = () => { try { modalFrame.contentWindow.focus(); } catch(e) {} };
+    closeBtn.focus();
+  }
+  function closeModal() {
+    backdrop.classList.remove('open');
+    backdrop.setAttribute('aria-hidden', 'true');
+    modalFrame.src = 'about:blank';
+  }
+
+  function scoreColor(v){ if(v>=9) return 'var(--pass)'; if(v>=7) return 'var(--partial)'; if(v>=5) return '#e67e22'; return 'var(--fail)'; }
+  // Render grid
+  for (const m of MODELS) {
+    const card = document.createElement('div');
+    card.className = 'card';
+    const scoreHtml = m.missing ? '<strong>—</strong>' : `<strong>${m.score.toFixed(1)}</strong>/10`;
+    const frameHtml = m.missing
+      ? `<div class="frame-missing"><div>➖<br><strong>No submission</strong><br><span style="font-size:11px">empty directory — nothing to embed</span></div></div>`
+      : `<iframe class="frame-scale" src="${m.file}" title="${m.model}" loading="lazy" tabindex="0"></iframe>`;
+    const statsHtml = m.missing
+      ? `<span class="stat loc" title="No file on disk">no file</span>`
+      : `<span class="stat func" title="Functionality — spec compliance"><span>func</span> <strong style="color:${scoreColor(m.functionality)}">${m.functionality.toFixed(1)}</strong></span>
+         <span class="stat qual" title="Code quality — loop/fidelity/structure/readability"><span>quality</span> <strong style="color:${scoreColor(m.codeQuality)}">${m.codeQuality.toFixed(1)}</strong></span>
+         <span class="stat loc" title="Lines of code (wc -l)">${m.loc} lines</span>`;
+    card.innerHTML = `
+      <div class="card-head">
+        <div class="card-head-left">
+          <div class="rank ${m.rank <= 4 ? 'top' : ''}">${m.rank}</div>
+          <div class="model-meta">
+            <div class="model-name" title="${m.model}">${m.model}</div>
+            <div class="family" title="${m.family}">${m.family}${m.notes ? ' · ' + m.notes : ''}</div>
+          </div>
+        </div>
+        <div class="card-head-right">
+          <span class="score">${scoreHtml}</span>
+          <span class="badge ${badgeClass(m.verdict)}">${badgeLabel(m.verdict)}</span>
+        </div>
+      </div>
+      <div class="card-stats">
+        ${statsHtml}
+      </div>
+      <div class="frame-wrap" data-file="${m.file}" title="${m.missing ? 'No submission' : 'Click to focus — then use Space / arrows / C'}">
+        ${frameHtml}
+      </div>
+      <div class="card-foot">
+        <span title="${m.file}">${m.file}</span>
+        <button class="btn primary" type="button" data-expand="${m.rank}" ${m.missing ? 'disabled' : ''}>Play full-size</button>
+      </div>
+    `;
+    grid.appendChild(card);
+  }
+
+  // Clicking the wrapper focuses the iframe (keyboard goes to that game)
+  grid.addEventListener('click', (e) => {
+    const wrap = e.target.closest('.frame-wrap');
+    if (wrap) {
+      const iframe = wrap.querySelector('iframe');
+      if (iframe) { iframe.focus(); }
+    }
+    const btn = e.target.closest('[data-expand]');
+    if (btn && !btn.disabled) {
+      const rank = Number(btn.getAttribute('data-expand'));
+      const m = MODELS.find(x => x.rank === rank);
+      if (m) openModal(m);
+    }
+  });
+
+  // Fit each 800×600 iframe into its responsive card (scale to container)
+  function fitFrames() {
+    document.querySelectorAll('.frame-wrap').forEach(wrap => {
+      const iframe = wrap.querySelector('iframe');
+      if (!iframe) return;
+      const w = wrap.clientWidth;
+      const h = wrap.clientHeight;
+      const scale = Math.min(w / 800, h / 600);
+      iframe.style.transform = `scale(${scale})`;
+      iframe.style.width = '800px';
+      iframe.style.height = '600px';
+    });
+  }
+  window.addEventListener('resize', fitFrames);
+  requestAnimationFrame(() => { fitFrames(); setTimeout(fitFrames, 100); });
+
+  backdrop.addEventListener('click', (e) => { if (e.target === backdrop) closeModal(); });
+  closeBtn.addEventListener('click', closeModal);
+  window.addEventListener('keydown', (e) => { if (e.key === 'Escape' && backdrop.classList.contains('open')) closeModal(); });
+</script>
+</body>
+</html>

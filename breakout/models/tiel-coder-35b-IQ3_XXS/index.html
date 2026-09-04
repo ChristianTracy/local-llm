@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Breakout</title>
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background: #0d1117;
+    color: #e6edf3;
+    font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  #wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+  canvas {
+    background: #05070a;
+    border: 2px solid #2d3748;
+    border-radius: 6px;
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.6);
+    display: block;
+  }
+  #hint {
+    font-size: 13px;
+    color: #8b949e;
+    letter-spacing: 0.3px;
+  }
+</style>
+</head>
+<body>
+  <div id="wrap">
+    <canvas id="game" width="800" height="600"></canvas>
+    <div id="hint">← → or A/D to move · SPACE to launch / pause</div>
+  </div>
+
+<script>
+(function () {
+  "use strict";
+
+  const canvas = document.getElementById("game");
+  const ctx = canvas.getContext("2d");
+  const W = canvas.width;   // 800
+  const H = canvas.height;  // 600
+
+  // ---- Game states ----
+  const STATE = {
+    START: "start",
+    PLAYING: "playing",
+    PAUSED: "paused",
+    GAME_OVER: "gameover",
+    VICTORY: "victory"
+  };
+
+  // ---- Config ----
+  const PADDLE_W = 100;
+  const PADDLE_H = 14;
+  const PADDLE_Y = H - 40;
+  const PADDLE_SPEED = 520;        // px/sec
+  const BALL_R = 8;
+  const BALL_SPEED = 380;         // px/sec
+  const BRICK_COLS = 8;
+  const BRICK_ROWS = 5;
+  const BRICK_PAD = 6;
+  const BRICK_TOP = 60;
+  const BRICK_LEFT = 40;
+  const LIVES = 3;
+  const POINTS_PER_BRICK = 10;
+
+  const BRICK_COLORS = [
+    "#ff5b5b",
+    "#ff9f43",
+    "#ffe66b",
+    "#43d979",
+    "#4bc8f0"
+  ];
+
+  // ---- Derived brick dimensions ----
+  const totalGap = BRICK_PAD * (BRICK_COLS + 1);
+  const brickW = (W - totalGap) / BRICK_COLS;
+  const brickH = 26;
+
+  // ---- Game variables ----
+  let state = STATE.START;
+  let score = 0;
+  let lives = LIVES;
+
+  let paddle = { x: (W - PADDLE_W) / 2, w: PADDLE_W, h: PADDLE_H };
+
+  let ball = { x: 0, y: 0, vx: 0, vy: 0, r: BALL_R, stuck: true };
+
+  let bricks = [];
+
+  const keys = { left: false, right: false };
+
+  // ---- Brick layout ----
+  function buildBricks() {
+    bricks = [];
+    for (let r = 0; r < BRICK_ROWS; r++) {
+      for (let c = 0; c < BRICK_COLS; c++) {
+        bricks.push({
+          x: BRICK_LEFT + c * (brickW + BRICK_PAD) + BRICK_PAD,
+          y: BRICK_TOP + r * (brickH + BRICK_PAD),
+          w: brickW,
+          h: brickH,
+          color: BRICK_COLORS[r % BRICK_COLORS.length],
+          alive: true,
+          row: r
+        });
+      }
+    }
+  }
+
+  // ---- Reset ball onto the paddle ----
+  function resetBall() {
+    ball.stuck = true;
+    ball.vx = 0;
+    ball.vy = 0;
+    ball.x = paddle.x + paddle.w / 2;
+    ball.y = PADDLE_Y - BALL_R - 1;
+  }
+
+  // ---- Start / reset a fresh game ----
+  function startGame() {
+    score = 0;
+    lives = LIVES;
+    paddle.x = (W - PADDLE_W) / 2;
+    buildBricks();
+    resetBall();
+  }
+
+  function launchBall() {
+    if (ball.stuck) {
+      ball.stuck = false;
+      ball.vx = 0;
+      ball.vy = -BALL_SPEED;
+    }
+  }
+
+  // ---- Input ----
+  document.addEventListener("keydown", function (e) {
+    const k = e.key.toLowerCase();
+
+    if (k === "arrowleft" || k === "a") {
+      keys.left = true;
+      e.preventDefault();
+    } else if (k === "arrowright" || k === "d") {
+      keys.right = true;
+      e.preventDefault();
+    } else if (e.key === " ") {
+      e.preventDefault();
+      handleSpace();
+    }
+  });
+
+  document.addEventListener("keyup", function (e) {
+    const k = e.key.toLowerCase();
+    if (k === "arrowleft" || k === "a") keys.left = false;
+    else if (k === "arrowright" || k === "d") keys.right = false;
+  });
+
+  function handleSpace() {
+    switch (state) {
+      case STATE.START:
+        state = STATE.PLAYING;
+        startGame();
+        launchBall();
+        break;
+      case STATE.PLAYING:
+        launchBall();
+        break;
+      case STATE.PAUSED:
+        state = STATE.PLAYING;
+        break;
+      case STATE.GAME_OVER:
+      case STATE.VICTORY:
+        state = STATE.PLAYING;
+        startGame();
+        launchBall();
+        break;
+    }
+  }
+
+  // Mouse click restarts from over/victory/start
+  canvas.addEventListener("mousedown", function () {
+    switch (state) {
+      case STATE.START:
+        state = STATE.PLAYING;
+        startGame();
+        launchBall();
+        break;
+      case STATE.GAME_OVER:
+      case STATE.VICTORY:
+        state = STATE.PLAYING;
+        startGame();
+        launchBall();
+        break;
+    }
+  });
+
+  // Move paddle with mouse (optional convenience)
+  canvas.addEventListener("mousemove", function (e) {
+    if (state !== STATE.PLAYING) return;
+    const rect = canvas.getBoundingClientRect();
+    const ratioX = W / rect.width;
+    const mx = (e.clientX - rect.left) * ratioX;
+    paddle.x = mx - paddle.w / 2;
+    clampPaddle();
+  });
+
+  function clampPaddle() {
+    if (paddle.x < 0) paddle.x = 0;
+    if (paddle.x + paddle.w > W) paddle.x = W - paddle.w;
+  }
+
+  // ---- Physics update ----
+  function update(dt) {
+    if (state !== STATE.PLAYING) return;
+
+    // Paddle movement
+    if (keys.left) paddle.x -= PADDLE_SPEED * dt;
+    if (keys.right) paddle.x += PADDLE_SPEED * dt;
+    clampPaddle();
+
+    if (ball.stuck) {
+      ball.x = paddle.x + paddle.w / 2;
+      ball.y = PADDLE_Y - BALL_R - 1;
+      return;
+    }
+
+    // Move ball
+    ball.x += ball.vx * dt;
+    ball.y += ball.vy * dt;
+
+    // Walls
+    if (ball.x - ball.r < 0) {
+      ball.x = ball.r;
+      ball.vx = Math.abs(ball.vx);
+    } else if (ball.x + ball.r > W) {
+      ball.x = W - ball.r;
+      ball.vx = -Math.abs(ball.vx);
+    }
+    if (ball.y - ball.r < 0) {
+      ball.y = ball.r;
+      ball.vy = Math.abs(ball.vy);
+    }
+
+    // Fell off bottom -> lose life
+    if (ball.y - ball.r > H) {
+      lives--;
+      if (lives <= 0) {
+        lives = 0;
+        state = STATE.GAME_OVER;
+      } else {
+        resetBall();
+      }
+      return;
+    }
+
+    // Paddle collision
+    if (ball.vy > 0) {
+      const pTop = PADDLE_Y;
+      const pBot = PADDLE_Y + PADDLE_H;
+      if (ball.y + ball.r >= pTop &&
+          ball.y - ball.r <= pBot &&
+          ball.x >= paddle.x - ball.r &&
+          ball.x <= paddle.x + paddle.w + ball.r) {
+
+        // Reflect and compute angle based on impact point
+        const impact = (ball.x - (paddle.x + paddle.w / 2)) / (paddle.w / 2); // -1 .. 1
+        const speed = Math.hypot(ball.vx, ball.vy) || BALL_SPEED;
+
+        // Base launch angle (upward), tilt by impact
+        const minAngle = -Math.PI * 0.33; // -60deg
+        const maxAngle =  Math.PI * 0.33; //  60deg
+        const angle = (minAngle + (maxAngle - minAngle) * (impact * 0.5 + 0.5));
+
+        ball.vx = speed * Math.sin(angle);
+        ball.vy = -Math.abs(speed * Math.cos(angle));
+
+        // Ensure ball sits above paddle to avoid sticking
+        ball.y = pTop - ball.r - 0.5;
+      }
+    }
+
+    // Brick collisions
+    resolveBricks();
+
+    // Check victory
+    if (bricks.every(function (b) { return !b.alive; })) {
+      state = STATE.VICTORY;
+    }
+  }
+
+  function resolveBricks() {
+    // Find the brick with the smallest penetration; simplest robust approach:
+    // check each alive brick for AABB vs circle.
+    let hit = null;
+    let bestDepth = Infinity;
+
+    for (let i = 0; i < bricks.length; i++) {
+      const b = bricks[i];
+      if (!b.alive) continue;
+
+      // Closest point on brick to circle center
+      const cx = Math.max(b.x, Math.min(ball.x, b.x + b.w));
+      const cy = Math.max(b.y, Math.min(ball.y, b.y + b.h));
+      const dx = ball.x - cx;
+      const dy = ball.y - cy;
+      const distSq = dx * dx + dy * dy;
+
+      if (distSq < ball.r * ball.r) {
+        const depth = ball.r * ball.r - distSq;
+        if (depth < bestDepth) {
+          bestDepth = depth;
+          hit = b;
+          hit.cx = cx;
+          hit.cy = cy;
+          hit.dx = dx;
+          hit.dy = dy;
+        }
+      }
+    }
+
+    if (hit) {
+      hit.alive = false;
+      score += POINTS_PER_BRICK;
+
+      // Determine bounce axis based on penetration depth
+      const overlapX = Math.abs(ball.x - hit.cx);
+      const overlapY = Math.abs(ball.y - hit.cy);
+
+      if (hit.dx === 0 && hit.dy === 0) {
+        // hit exactly within interior; default to horizontal reflect
+        ball.vx = -ball.vx;
+      } else if (overlapX < overlapY) {
+        ball.vx = -ball.vx;
+      } else {
+        ball.vy = -ball.vy;
+      }
+    }
+  }
+
+  // ---- Rendering ----
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+
+    drawBricks();
+    drawPaddle();
+    drawBall();
+    drawHUD();
+    drawOverlay();
+  }
+
+  function drawBricks() {
+    for (let i = 0; i < bricks.length; i++) {
+      const b = bricks[i];
+      if (!b.alive) continue;
+      ctx.fillStyle = b.color;
+      roundRect(ctx, b.x, b.y, b.w, b.h, 4);
+      ctx.fill();
+    }
+  }
+
+  function drawPaddle() {
+    ctx.fillStyle = "#c8d6e5";
+    roundRect(ctx, paddle.x, PADDLE_Y, paddle.w, paddle.h, 6);
+    ctx.fill();
+  }
+
+  function drawBall() {
+    ctx.beginPath();
+    ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
+    ctx.fillStyle = "#ffffff";
+    ctx.fill();
+  }
+
+  function drawHUD() {
+    ctx.fillStyle = "#e6edf3";
+    ctx.font = "bold 20px Segoe UI, Arial, sans-serif";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "top";
+    ctx.fillText("Score: " + score, 16, 14);
+
+    ctx.textAlign = "right";
+    ctx.fillText("Lives: " + lives, W - 16, 14);
+  }
+
+  function drawOverlay() {
+    let message = "";
+    let sub = "";
+
+    if (state === STATE.START) {
+      message = "BREAKOUT";
+      sub = "Press SPACE or click to start";
+    } else if (state === STATE.PAUSED) {
+      message = "PAUSED";
+      sub = "Press SPACE to resume";
+    } else if (state === STATE.GAME_OVER) {
+      message = "GAME OVER";
+      sub = "Score: " + score + " — Press SPACE or click to restart";
+    } else if (state === STATE.VICTORY) {
+      message = "YOU WIN!";
+      sub = "Score: " + score + " — Press SPACE or click to play again";
+    } else {
+      return; // playing: no overlay
+    }
+
+    // Dim background
+    ctx.fillStyle = "rgba(5, 7, 10, 0.72)";
+    ctx.fillRect(0, 0, W, H);
+
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 64px Segoe UI, Arial, sans-serif";
+    ctx.fillText(message, W / 2, H / 2 - 40);
+
+    ctx.font = "24px Segoe UI, Arial, sans-serif";
+    ctx.fillStyle = "#8b949e";
+    ctx.fillText(sub, W / 2, H / 2 + 30);
+  }
+
+  // Helper: rounded rectangle
+  function roundRect(c, x, y, w, h, r) {
+    r = Math.min(r, w / 2, h / 2);
+    c.beginPath();
+    c.moveTo(x + r, y);
+    c.arcTo(x + w, y, x + w, y + h, r);
+    c.arcTo(x + w, y + h, x, y + h, r);
+    c.arcTo(x, y + h, x, y, r);
+    c.arcTo(x, y, x + w, y, r);
+    c.closePath();
+  }
+
+  // ---- Main loop with delta time ----
+  let lastTime = performance.now();
+
+  function frame(now) {
+    let dt = (now - lastTime) / 1000;
+    lastTime = now;
+    if (dt > 0.05) dt = 0.05; // clamp to avoid tunneling on big gaps
+    update(dt);
+    draw();
+    requestAnimationFrame(frame);
+  }
+
+  // Initialize
+  buildBricks();
+  resetBall();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

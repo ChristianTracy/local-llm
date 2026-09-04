@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Breakout</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #06080f; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; user-select: none; }
+        canvas { display: block; }
+        #hud {
+            position: absolute; top: 20px; left: 20px; right: 20px;
+            display: flex; justify-content: space-between; align-items: center;
+            color: white; pointer-events: none; font-size: 20px; font-weight: bold;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+        .hud-item { display: flex; align-items: center; gap: 10px; }
+        #score-container { transition: transform 0.1s ease-out; }
+        .score-pop { transform: scale(1.3); color: #ffeb3b; }
+        #lives-container { color: #ff5252; }
+        #camera-indicator, #mute-indicator { font-size: 14px; opacity: 0.7; }
+        
+        #overlay {
+            position: absolute; inset: 0; display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            background: rgba(6, 8, 15, 0.7); color: white;
+            text-align: center; transition: opacity 0.3s;
+        }
+        h1 { font-size: 64px; margin: 0; background: linear-gradient(to bottom, #fff, #aaa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .subtitle { font-size: 24px; margin: 20px 0; animation: blink 1.5s infinite; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+        .key-hints { margin-top: 40px; font-size: 16px; opacity: 0.7; line-height: 1.6; }
+        .hidden { display: none !important; }
+    </style>
+    <script async src="https://unpkg.com/es-module-shims@1.8.0/dist/es-module-shims.js"></script>
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+</head>
+<body>
+    <div id="hud">
+        <div class="hud-item">
+            <div id="score-container">SCORE: <span id="score-val">0</span></div>
+        </div>
+        <div class="hud-item">
+            <div id="mute-indicator">🔊</div>
+            <div id="camera-indicator">CAM: AUTO</div>
+            <div id="lives-container"></div>
+        </div>
+    </div>
+
+    <div id="overlay">
+        <h1 id="overlay-title">BREAKOUT 3D</h1>
+        <div id="overlay-subtitle" class="subtitle">PRESS [SPACE] TO START</div>
+        <div class="key-hints">
+            [A][D] or [←][→] Move Paddle<br>
+            [SPACE] Pause/Play/Start<br>
+            [C] Toggle Camera | [M] Mute | [R] Reset Camera
+        </div>
+    </div>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+
+        // --- CONSTANTS ---
+        const W = 800, H = 600;
+        const LEFT = -6, RIGHT = 6, TOP = 8, FLOOR_Y = -6;
+        const PADDLE_Y = -4.5, PADDLE_W = 2.4, PADDLE_SPEED = 11;
+        const BALL_R = 0.25, BALL_SPEED = 16;
+        const BRICK_COLS = 8, BRICK_ROWS = 5;
+        const BRICK_W = 1.3, BRICK_H = 0.55, BRICK_D = 0.9;
+        const BRICK_SPACING_X = 1.5, BRICK_SPACING_Y = 0.85;
+        const COLORS = [0xff5252, 0xffb74d, 0xffd54f, 0x66bb6a, 0x4fc3f7];
+
+        const STATE = { START: 0, READY: 1, PLAYING: 2, PAUSED: 3, GAMEOVER: 4, VICTORY: 5 };
+        let currentState = STATE.START;
+
+        // --- GAME STATE ---
+        let score = 0;
+        let lives = 3;
+        let muted = false;
+        let camMode = 'AUTO'; // 'AUTO' or 'MANUAL'
+        let audioCtx = null;
+        let cameraShake = 0;
+        let cameraLerpY = 0;
+        let manualOrbit = { yaw: 0, pitch: 0.519, dist: 16.16 };
+        let isDragging = false;
+        let previousMouse = { x: 0, y: 0 };
+
+        // --- ENGINE ---
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x06080f);
+        scene.fog = new THREE.Fog(0x06080f, 38, 75);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(W, H);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.1;
+        document.body.appendChild(renderer.domElement);
+
+        const camera = new THREE.PerspectiveCamera(60, W/H, 0.1, 100);
+        camera.position.set(0, 9, 14);
+        camera.lookAt(0, 1, 0);
+
+        const clock = new THREE.Clock();
+
+        // --- AUDIO ENGINE ---
+        function initAudio() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+
+        function playSound(freqs, type = 'sine', vol = 0.1, duration = 0.1) {
+            if (muted || !audioCtx) return;
+            const now = audioCtx.currentTime;
+            
+            const playOsc = (f, v, d) => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(f, now);
+                gain.gain.setValueAtTime(v, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + d);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(now + d);
+            };
+
+            if (Array.isArray(freqs)) {
+                freqs.forEach((f, i) => playOsc(f, vol * (i === 0 ? 1 : 0.25), duration + (i * 0.12)));
+            } else {
+                playOsc(freqs, vol, duration);
+            }
+        }
+
+        // --- TEXTURES ---
+        function createFloorTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512; canvas.height = 512;
+            const ctx = canvas.getContext('2d');
+            // Base
+            ctx.fillStyle = '#0d1226';
+            ctx.fillRect(0, 0, 512, 512);
+            // Radial Glow
+            const grad = ctx.createRadialGradient(256, 256, 50, 256, 256, 300);
+            grad.addColorStop(0, 'rgba(100, 150, 255, 0.2)');
+            grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, 512, 512);
+            // Grid
+            ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+            ctx.lineWidth = 1;
+            for(let i=0; i<512; i+=64) { ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,512); ctx.stroke(); }
+            for(let i=0; i<512; i+=32) { ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(512,i); ctx.stroke(); }
+            // Vignette
+            const vig = ctx.createRadialGradient(256, 256, 200, 256, 256, 300);
+            vig.addColorStop(0, 'rgba(0,0,0,0)');
+            vig.addColorStop(1, 'rgba(0,0,0,0.6)');
+            ctx.fillStyle = vig;
+            ctx.fillRect(0, 0, 512, 512);
+
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+            return tex;
+        }
+
+        function createBrickTexture(color) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 256; canvas.height = 96;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = `#${color.toString(16).padStart(6, '0')}`;
+            ctx.fillRect(0, 0, 256, 96);
+            // Gloss
+            const grad = ctx.createLinearGradient(0, 0, 0, 96);
+            grad.addColorStop(0, 'rgba(255,255,255,0.4)');
+            grad.addColorStop(0.5, 'rgba(255,255,255,0)');
+            grad.addColorStop(1, 'rgba(0,0,0,0.4)');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, 256, 96);
+            // Streaks
+            ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+            for(let i=0; i<40; i++) {
+                ctx.beginPath();
+                const x = Math.random()*256;
+                const y = Math.random()*96;
+                ctx.moveTo(x, y);
+                ctx.lineTo(x + 10, y + 2);
+                ctx.stroke();
+            }
+            // Bevel
+            ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(2, 2, 252, 92);
+
+            const tex = new THREE.CanvasTexture(canvas);
+            return tex;
+        }
+
+        function createPaddleTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 256; canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+            const grad = ctx.createLinearGradient(0, 0, 0, 64);
+            grad.addColorStop(0, '#9feaff');
+            grad.addColorStop(0.5, '#29c7ff');
+            grad.addColorStop(1, '#0a6fa8');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, 256, 64);
+            // Stripe
+            ctx.fillStyle = 'rgba(255,255,255,0.2)';
+            ctx.fillRect(0, 30, 256, 4);
+            // Accents
+            ctx.fillStyle = 'rgba(255,255,255,0.1)';
+            ctx.fillRect(0, 0, 10, 64);
+            ctx.fillRect(246, 0, 10, 64);
+
+            const tex = new THREE.CanvasTexture(canvas);
+            return tex;
+        }
+
+        function createBackdropTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 1024; canvas.height = 512;
+            const ctx = canvas.getContext('2d');
+            const grad = ctx.createLinearGradient(0, 0, 0, 512);
+            grad.addColorStop(0, '#0a1028');
+            grad.addColorStop(0.5, '#070b1c');
+            grad.addColorStop(1, '#03050c');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, 1024, 512);
+            // Nebula blobs
+            const drawBlob = (x, y, r, c) => {
+                const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+                g.addColorStop(0, c);
+                g.addColorStop(1, 'transparent');
+                ctx.fillStyle = g;
+                ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2); ctx.fill();
+            };
+            drawBlob(200, 200, 250, 'rgba(79, 108, 255, 0.15)');
+            drawBlob(800, 150, 300, 'rgba(102, 217, 255, 0.1)');
+            drawBlob(512, 400, 200, 'rgba(255, 82, 82, 0.05)');
+
+            const tex = new THREE.CanvasTexture(canvas);
+            return tex;
+        }
+
+        // --- SCENE OBJECTS ---
+        const floorGeo = new THREE.PlaneGeometry(46, 46);
+        const floorMat = new THREE.MeshStandardMaterial({ map: createFloorTexture(), roughness: 0.8 });
+        const floor = new THREE.Mesh(floorGeo, floorMat);
+        floor.rotation.x = -Math.PI / 2;
+        floor.position.y = -6;
+        floor.receiveShadow = true;
+        scene.add(floor);
+
+        const backdropGeo = new THREE.PlaneGeometry(220, 110);
+        const backdropMat = new THREE.MeshBasicMaterial({ map: createBackdropTexture(), transparent: true, opacity: 0.6 });
+        const backdrop = new THREE.Mesh(backdropGeo, backdropMat);
+        backdrop.position.set(0, 8, -48);
+        scene.add(backdrop);
+
+        const starGeo = new THREE.BufferGeometry();
+        const starPos = [];
+        for(let i=0; i<260; i++) {
+            starPos.push((Math.random()-0.5)*100, (Math.random()-0.5)*50, (Math.random()-0.5)*100 - 50);
+        }
+        starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starPos, 3));
+        const starMat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.15 });
+        scene.add(new THREE.Points(starGeo, starMat));
+
+        // Lights
+        const ambient = new THREE.AmbientLight(0x404040, 1.2);
+        scene.add(ambient);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1.7);
+        dirLight.position.set(6, 16, 9);
+        dirLight.castShadow = true;
+        dirLight.shadow.mapSize.set(2048, 2048);
+        dirLight.shadow.camera.left = -10;
+        dirLight.shadow.camera.right = 10;
+        dirLight.shadow.camera.top = 12;
+        dirLight.shadow.camera.bottom = -10;
+        dirLight.shadow.camera.near = 2;
+        dirLight.shadow.camera.far = 45;
+        dirLight.shadow.bias = -0.0003;
+        dirLight.shadow.normalBias = 0.02;
+        scene.add(dirLight);
+
+        const rimLight = new THREE.DirectionalLight(0x4a6cff, 0.5);
+        rimLight.position.set(-8, 4, -10);
+        scene.add(rimLight);
+
+        const ballLight = new THREE.PointLight(0x66d9ff, 1.2, 9);
+        ballLight.decay = 2;
+        scene.add(ballLight);
+
+        // Game Objects
+        const paddleGeo = new RoundedBoxGeometry(PADDLE_W, 0.3, 0.8, 4, 0.1);
+        const paddleMat = new THREE.MeshStandardMaterial({ map: createPaddleTexture(), roughness: 0.3, metalness: 0.4 });
+        const paddle = new THREE.Mesh(paddleGeo, paddleMat);
+        paddle.position.y = PADDLE_Y;
+        paddle.castShadow = true;
+        scene.add(paddle);
+
+        const ballGeo = new THREE.SphereGeometry(BALL_R, 32, 32);
+        const ballMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 0 });
+        const ball = new THREE.Mesh(ballGeo, ballMat);
+        ball.castShadow = true;
+        scene.add(ball);
+
+        let ballVel = new THREE.Vector3(0, 0, 0);
+        let ballActive = false;
+
+        // Bricks
+        const bricks = [];
+        const brickGroup = new THREE.Group();
+        scene.add(brickGroup);
+
+        function createBricks() {
+            brickGroup.clear();
+            bricks.length = 0;
+            const startX = -5.25;
+            const startY = 4.5;
+            for(let r=0; r<BRICK_ROWS; r++) {
+                const color = COLORS[r];
+                const mat = new THREE.MeshStandardMaterial({ 
+                    map: createBrickTexture(color), 
+                    emissive: color, 
+                    emissiveIntensity: 0 
+                });
+                for(let c=0; c<BRICK_COLS; c++) {
+                    const bGeo = new RoundedBoxGeometry(BRICK_W, BRICK_H, BRICK_D, 4, 0.08);
+                    const bMesh = new THREE.Mesh(bGeo, mat.clone());
+                    bMesh.position.set(startX + c * BRICK_SPACING_X, startY - r * BRICK_SPACING_Y, 0);
+                    bMesh.castShadow = true;
+                    bMesh.receiveShadow = true;
+                    bMesh.userData = { color, row: r, active: true };
+                    brickGroup.add(bMesh);
+                    bricks.push(bMesh);
+                }
+            }
+        }
+        createBricks();
+
+        // Particles
+        const particles = [];
+        const particleGeo = new THREE.SphereGeometry(0.1, 8, 8);
+        function spawnParticles(pos, color) {
+            for(let i=0; i<10; i++) {
+                const pMat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 1 });
+                const p = new THREE.Mesh(particleGeo, pMat);
+                p.position.copy(pos);
+                p.userData = {
+                    vel: new THREE.Vector3((Math.random()-0.5)*0.2, Math.random()*0.2, (Math.random()-0.5)*0.2),
+                    life: 1.0
+                };
+                scene.add(p);
+                particles.push(p);
+            }
+        }
+
+        // Ball Trail
+        const trailParticles = [];
+        function spawnTrail(pos) {
+            if (currentState !== STATE.PLAYING) return;
+            const pMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.4 });
+            const p = new THREE.Mesh(new THREE.SphereGeometry(BALL_R * 0.8, 8, 8), pMat);
+            p.position.copy(pos);
+            scene.add(p);
+            trailParticles.push(p);
+            if (trailParticles.length > 12) {
+                const old = trailParticles.shift();
+                scene.remove(old);
+                old.geometry.dispose();
+                old.material.dispose();
+            }
+        }
+
+        // --- INPUT ---
+        const keys = {};
+        window.addEventListener('keydown', e => {
+            keys[e.code] = true;
+            if (e.code === 'Space') handleKeyPress();
+            if (e.code === 'KeyC') toggleCam();
+            if (e.code === 'KeyM') toggleMute();
+            if (e.code === 'KeyR') resetCamera();
+        });
+        window.addEventListener('keyup', e => keys[e.code] = false);
+        window.addEventListener('mousedown', () => { if(currentState >= STATE.GAMEOVER) handleKeyPress(); });
+
+        function handleKeyPress() {
+            initAudio();
+            if (currentState === STATE.START || currentState === STATE.GAMEOVER || currentState === STATE.VICTORY) {
+                resetGame();
+            } else if (currentState === STATE.READY) {
+                launchBall();
+            } else if (currentState === STATE.PLAYING) {
+                currentState = STATE.PAUSED;
+                showOverlay(STATE.PAUSED);
+            } else if (currentState === STATE.PAUSED) {
+                currentState = STATE.PLAYING;
+                hideOverlay();
+            }
+        }
+
+        function toggleCam() {
+            if (camMode === 'AUTO') {
+                camMode = 'MANUAL';
+                document.getElementById('camera-indicator').innerText = "CAM: MANUAL";
+            } else {
+                camMode = 'AUTO';
+                resetCamera();
+                document.getElementById('camera-indicator').innerText = "CAM: AUTO";
+            }
+        }
+
+        function resetCamera() {
+            manualOrbit.yaw = 0;
+            manualOrbit.pitch = 0.519;
+            manualOrbit.dist = 16.16;
+            camera.position.set(0, 9, 14);
+            camera.lookAt(0, 1, 0);
+        }
+
+        function toggleMute() {
+            muted = !muted;
+            document.getElementById('mute-indicator').innerText = muted ? "🔇" : "🔊";
+        }
+
+        // --- GAME LOGIC ---
+        function resetGame() {
+            score = 0;
+            lives = 3;
+            currentState = STATE.READY;
+            updateHUD();
+            hideOverlay();
+            resetBall();
+            createBricks();
+            cameraShake = 0;
+        }
+
+        function resetBall() {
+            ballActive = false;
+            ball.position.set(paddle.position.x, paddle.position.y + 0.5, 0);
+            ballVel.set(0,0,0);
+            ballMat.emissiveIntensity = 0;
+        }
+
+        function launchBall() {
+            ballActive = true;
+            const angle = (Math.random() - 0.5) * 0.5;
+            ballVel.set(Math.sin(angle) * BALL_SPEED, Math.cos(angle) * BALL_SPEED, 0);
+            currentState = STATE.PLAYING;
+            hideOverlay();
+        }
+
+        function loseLife() {
+            lives--;
+            updateHUD();
+            cameraShake = 0.5;
+            playSound([220], 'sawtooth', 0.22, 0.35);
+            if (lives <= 0) {
+                currentState = STATE.GAMEOVER;
+                showOverlay(STATE.GAMEOVER);
+            } else {
+                currentState = STATE.READY;
+                resetBall();
+            }
+        }
+
+        function updateHUD() {
+            document.getElementById('score-val').innerText = score;
+            const scoreCont = document.getElementById('score-container');
+            scoreCont.classList.remove('score-pop');
+            void scoreCont.offsetWidth; // trigger reflow
+            scoreCont.classList.add('score-pop');
+
+            const livesCont = document.getElementById('lives-container');
+            livesCont.innerText = '♥'.repeat(lives) + '·'.repeat(3 - lives);
+        }
+
+        function showOverlay(state) {
+            const ov = document.getElementById('overlay');
+            const title = document.getElementById('overlay-title');
+            const sub = document.getElementById('overlay-subtitle');
+            ov.classList.remove('hidden');
+            
+            if (state === STATE.PAUSED) {
+                title.innerText = "PAUSED";
+                sub.innerText = "PRESS [SPACE] TO RESUME";
+            } else if (state === STATE.GAMEOVER) {
+                title.innerText = "GAME OVER";
+                sub.innerText = "CLICK OR [SPACE] TO RESTART";
+            } else if (state === STATE.VICTORY) {
+                title.innerText = "VICTORY!";
+                sub.innerText = "CLICK OR [SPACE] TO REPLAY";
+            }
+        }
+
+        function hideOverlay() {
+            document.getElementById('overlay').classList.add('hidden');
+        }
+
+        function update(dt) {
+            // Input: Paddle
+            if (keys['ArrowLeft'] || keys['KeyA']) paddle.position.x -= PADDLE_SPEED * dt;
+            if (keys['ArrowRight'] || keys['KeyD']) paddle.position.x += PADDLE_SPEED * dt;
+            paddle.position.x = Math.max(LEFT + 1.2, Math.min(RIGHT - 1.2, paddle.position.x));
+
+            // Squash/Stretch effect
+            paddle.scale.x = 1 + Math.sin(Date.now() * 0.02) * 0.05; // Subtle idle
+
+            if (currentState === STATE.PLAYING) {
+                // Ball physics
+                ball.position.add(ballVel.clone().multiplyScalar(dt));
+                ballLight.position.set(ball.position.x, ball.position.y + 0.3, 1.5);
+
+                // Ball Emissive Pulse
+                ballMat.emissiveIntensity = 0.4 + 0.35 * (0.5 + 0.5 * Math.sin(clock.elapsedTime * 8));
+
+                // Ball Trail
+                spawnTrail(ball.position);
+
+                // Wall Collisions
+                if (ball.position.x < LEFT || ball.position.x > RIGHT) {
+                    ballVel.x *= -1;
+                    ball.position.x = Math.max(LEFT, Math.min(RIGHT, ball.position.x));
+                }
+                if (ball.position.y > TOP) {
+                    ballVel.y *= -1;
+                    ball.position.y = Math.min(TOP, ball.position.y);
+                }
+                if (ball.position.y < FLOOR_Y) {
+                    loseLife();
+                }
+
+                // Paddle Collision
+                if (ball.position.y < paddle.position.y + 0.3 && ball.position.y > paddle.position.y - 0.3 &&
+                    Math.abs(ball.position.x - paddle.position.x) < PADDLE_W/2 + BALL_R) {
+                    
+                    const offset = Math.max(-1, Math.min(1, (ball.position.x - paddle.position.x) / (PADDLE_W / 2)));
+                    const angle = offset * (Math.PI / 3); // 60 deg
+                    ballVel.x = Math.sin(angle) * BALL_SPEED;
+                    ballVel.y = Math.cos(angle) * BALL_SPEED;
+                    ball.position.y = paddle.position.y + 0.3;
+                    
+                    playSound([880], 'square', 0.18, 0.07);
+                    // Squash effect
+                    paddle.scale.y = 0.7;
+                    paddle.scale.x = 1.2;
+                }
+                paddle.scale.y = THREE.MathUtils.lerp(paddle.scale.y, 1, 0.2);
+                paddle.scale.x = THREE.MathUtils.lerp(paddle.scale.x, 1, 0.2);
+
+                // Brick Collision
+                for (let i = bricks.length - 1; i >= 0; i--) {
+                    const b = bricks[i];
+                    if (!b.userData.active) continue;
+
+                    const dx = Math.abs(ball.position.x - b.position.x);
+                    const dy = Math.abs(ball.position.y - b.position.y);
+
+                    if (dx < (BRICK_W/2 + BALL_R) && dy < (BRICK_H/2 + BALL_R)) {
+                        // Collision detected
+                        // Find collision face
+                        const overlapX = (BRICK_W/2 + BALL_R) - dx;
+                        const overlapY = (BRICK_H/2 + BALL_R) - dy;
+
+                        if (overlapX < overlapY) {
+                            ballVel.x *= -1;
+                        } else {
+                            ballVel.y *= -1;
+                        }
+
+                        // Destroy brick
+                        b.userData.active = false;
+                        b.visible = false;
+                        score += 10;
+                        updateHUD();
+                        playSound([660], 'triangle', 0.22, 0.09);
+                        spawnParticles(b.position, b.userData.color);
+
+                        // Check Win
+                        if (bricks.every(br => !br.userData.active)) {
+                            currentState = STATE.VICTORY;
+                            showOverlay(STATE.VICTORY);
+                        }
+                        break; // One collision per frame
+                    }
+                }
+
+                // Anti-stall
+                if (Math.abs(ballVel.y) < 1.5) {
+                    ballVel.y = Math.sign(ballVel.y || 1) * 1.5;
+                }
+            } else if (currentState === STATE.READY) {
+                ball.position.x = paddle.position.x;
+                ball.position.y = paddle.position.y + 0.5;
+                ballVel.set(0,0,0);
+            }
+
+            // Particles update
+            for(let i=particles.length-1; i>=0; i--) {
+                const p = particles[i];
+                p.position.add(p.userData.vel);
+                p.userData.life -= dt * 2;
+                p.material.opacity = p.userData.life;
+                if(p.userData.life <= 0) {
+                    scene.remove(p);
+                    particles.splice(i, 1);
+                }
+            }
+        }
+
+        function updateCamera(dt) {
+            if (cameraShake > 0) {
+                camera.position.x = (Math.random()-0.5) * cameraShake;
+                camera.position.y = 9 + (Math.random()-0.5) * cameraShake;
+                cameraShake *= 0.9;
+            } else {
+                camera.position.x = 0;
+                camera.position.y = 9;
+            }
+
+            if (camMode === 'AUTO') {
+                // Lerp X toward paddle
+                camera.position.x = THREE.MathUtils.lerp(camera.position.x, paddle.position.x * 0.25, Math.min(1, dt * 4));
+                // Decay Y offset
+                cameraLerpY = THREE.MathUtils.lerp(cameraLerpY, 0, Math.exp(-dt * 3));
+                camera.position.y = 9 + cameraLerpY;
+            } else {
+                // Manual Orbit
+                const dist = manualOrbit.dist;
+                camera.position.x = dist * Math.sin(manualOrbit.yaw) * Math.cos(manualOrbit.pitch);
+                camera.position.y = dist * Math.sin(manualOrbit.pitch);
+                camera.position.z = dist * Math.cos(manualOrbit.yaw) * Math.cos(manualOrbit.pitch);
+                camera.lookAt(0, 1, 0);
+            }
+        }
+
+        // --- MOUSE INTERACTION FOR MANUAL CAMERA ---
+        window.addEventListener('mousedown', (e) => {
+            if (camMode === 'MANUAL') {
+                isDragging = true;
+                previousMouse = { x: e.clientX, y: e.clientY };
+            }
+        });
+        window.addEventListener('mousemove', (e) => {
+            if (isDragging && camMode === 'MANUAL') {
+                const dx = e.clientX - previousMouse.x;
+                const dy = e.clientY - previousMouse.y;
+                manualOrbit.yaw -= dx * 0.01;
+                manualOrbit.pitch = Math.max(0.08, Math.min(1.35, manualOrbit.pitch + dy * 0.01));
+                previousMouse = { x: e.clientX, y: e.clientY };
+            }
+        });
+        window.addEventListener('mouseup', () => isDragging = false);
+        window.addEventListener('wheel', (e) => {
+            if (camMode === 'MANUAL') {
+                manualOrbit.dist = Math.max(8, Math.min(30, manualOrbit.dist + e.deltaY * 0.02));
+            }
+        });
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const dt = Math.min(clock.getDelta(), 0.05);
+            
+            update(dt);
+            updateCamera(dt);
+            
+            renderer.render(scene, camera);
+        }
+
+        // Initial state
+        currentState = STATE.START;
+        showOverlay(STATE.START);
+        animate();
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            camera.aspect = W/H;
+            camera.updateProjectionMatrix();
+            renderer.setSize(W, H);
+        });
+
+    </script>
+</body>
+</html>

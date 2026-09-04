@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Breakout 3D — Model Comparison Report</title>
+<style>
+  :root{--bg:#0c1118;--card:#151c27;--card2:#1a2333;--border:#232e42;--text:#e6eaf0;--muted:#8a97ad;--accent:#4f8cff;--pass:#2ecc71;--partial:#f39c12;--fail:#e74c3c;--code:#0f141e}
+  *{box-sizing:border-box} html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,ui-monospace,SFMono-Regular,Menlo,monospace;line-height:1.65}
+  a{color:var(--accent);text-decoration:none} a:hover{text-decoration:underline}
+  .site-header{position:sticky;top:0;z-index:40;backdrop-filter:blur(12px) saturate(1.4);background:rgba(12,17,24,0.88);border-bottom:1px solid var(--border)}
+  .header-inner{max-width:1080px;margin:0 auto;padding:14px 20px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+  .brand{display:flex;align-items:center;gap:12px;text-decoration:none;color:var(--text)}
+  .brand-icon{width:38px;height:38px;display:grid;place-items:center;border-radius:10px;font-size:18px;font-weight:800;background:linear-gradient(135deg,var(--accent),#7c5cff);color:#fff;box-shadow:0 4px 16px rgba(79,140,255,0.35);flex-shrink:0}
+  .brand-text{display:flex;flex-direction:column;line-height:1.1}
+  .brand-title{font-size:16px;font-weight:800;letter-spacing:-0.3px}
+  .brand-sub{font-size:11px;color:var(--muted);margin-top:2px}
+  .tabs{display:flex;gap:6px;margin-left:auto;flex-wrap:wrap}
+  .tab{font-size:12px;font-weight:700;letter-spacing:0.2px;padding:7px 14px;border-radius:999px;border:1px solid var(--border);background:#1a2333;color:var(--muted);text-decoration:none;transition:all .15s}
+  .tab:hover{color:var(--text);border-color:#2e3d5c;background:#1e2d4a;text-decoration:none}
+  .tab.active{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 2px 10px rgba(79,140,255,0.4)}
+  .header-actions{display:flex;gap:8px;align-items:center}
+  .icon-link{font-size:11px;font-weight:600;padding:5px 9px;border-radius:999px;border:1px solid var(--border);background:transparent;color:var(--muted);text-decoration:none}
+  .icon-link:hover{color:var(--text);border-color:var(--accent);text-decoration:none}
+  main{max-width:1080px;margin:0 auto;padding:20px}
+  .lead{color:var(--muted);font-size:13px;margin:8px 0 0}
+  .toc{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin:16px 0}
+  .toc strong{font-size:12px;letter-spacing:0.4px;text-transform:uppercase;color:var(--muted)}
+  .toc ol{margin:8px 0 0 18px;padding:0;font-size:13px}
+  .toc li{margin:4px 0;color:var(--muted)} .toc a{color:var(--text)}
+  h2{margin:32px 0 12px;font-size:19px;letter-spacing:-0.2px;border-bottom:1px solid var(--border);padding-bottom:8px}
+  h3{margin:20px 0 8px;font-size:15px;color:var(--text)} h4{margin:16px 0 6px;font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px}
+  p{font-size:13.5px;color:var(--text);margin:8px 0}
+  .muted{color:var(--muted)}
+  code{background:var(--code);border:1px solid var(--border);border-radius:5px;padding:1px 6px;font-size:12px}
+  pre{background:var(--code);border:1px solid var(--border);border-radius:8px;padding:12px;overflow:auto;font-size:12px}
+  table{width:100%;border-collapse:collapse;margin:14px 0;font-size:12.5px}
+  th,td{border:1px solid var(--border);padding:7px 9px;text-align:left} th{background:var(--card2);color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:0.4px}
+  td{color:var(--muted)} td:first-child{color:var(--text)} td strong{color:var(--text)}
+  .badge{font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;border:1px solid}
+  .badge.pass{color:var(--pass);border-color:rgba(46,204,113,0.4);background:rgba(46,204,113,0.12)}
+  .badge.partial{color:var(--partial);border-color:rgba(243,156,18,0.4);background:rgba(243,156,18,0.12)}
+  .badge.fail{color:var(--fail);border-color:rgba(231,76,60,0.4);background:rgba(231,76,60,0.12)}
+  .badge.missing{color:var(--muted);border-color:var(--border);background:#1a2333}
+  .callout{background:rgba(79,140,255,0.08);border:1px solid var(--border);border-radius:10px;padding:11px 13px;font-size:12.5px;color:var(--muted);margin:12px 0;line-height:1.6}
+  .callout.warn{background:rgba(231,76,60,0.07);border-color:rgba(231,76,60,0.35)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px} @media(max-width:700px){.grid2{grid-template-columns:1fr}}
+  .kpi{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px}
+  .kpi .n{font-size:22px;font-weight:800;color:var(--text)} .kpi .l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-top:2px}
+  .tier{border-left:3px solid var(--border);padding-left:12px;margin:14px 0}
+  .tier.t1{border-color:var(--pass)} .tier.t2{border-color:var(--fail)}
+  footer{max-width:1080px;margin:0 auto;padding:18px 20px 28px;color:var(--muted);font-size:11px;text-align:center;border-top:1px solid var(--border);margin-top:20px}
+</style>
+</head>
+<body>
+<header class="site-header">
+  <div class="header-inner">
+    <a class="brand" href="index.html">
+      <div class="brand-icon">◧</div>
+      <div class="brand-text">
+        <span class="brand-title">Breakout 3D Lab</span>
+        <span class="brand-sub">Report · runtime-verified · 2026-09-03</span>
+      </div>
+    </a>
+    <nav class="tabs" aria-label="Primary">
+      <a class="tab" href="../index.html">⌂ Home</a>
+      <a class="tab" href="index.html">◧ Gallery</a>
+      <a class="tab active" href="report.html">Report</a>
+      <a class="tab" href="models-configurations.html">Configurations</a>
+    </nav>
+    <div class="header-actions">
+      <a class="icon-link" href="prompt.md">prompt</a>
+      <a class="icon-link" href="results.json">json</a>
+      <a class="icon-link" href="report.md">md</a>
+    </div>
+  </div>
+</header>
+<main>
+  <p class="lead">Single-file 3D Breakout (Three.js <code>0.160.0</code> + <code>rAF</code> + <code>Clock.getDelta()</code> ≤ <code>0.05</code>). <strong>Static + headless-Chromium runtime test</strong> — screenshots, console errors, Space/arrows/C/R/M + click. All 11 models submitted and tested. Needs internet (unpkg CDN).</p>
+
+  <div class="toc">
+    <strong>Contents</strong>
+    <ol>
+      <li><a href="#ranking">Ranking — TL;DR</a></li>
+      <li><a href="#tested">How This Was Tested</a></li>
+      <li><a href="#rubric">Scoring Rubric</a></li>
+      <li><a href="#matrix">Compliance Matrix</a></li>
+      <li><a href="#breakdown">Detailed Breakdown</a></li>
+      <li><a href="#env">Environment · Hardware</a></li>
+    </ol>
+  </div>
+
+  <div class="grid2">
+    <div class="kpi"><div class="n">6 / 11 playable</div><div class="l">RIDGE, Q4XS, Q3S, Q2, Q3XL, gemma26A · 0 console errors</div></div>
+    <div class="kpi"><div class="n">5 fatal failures</div><div class="l">qwen3-5, gpt-20, ornith, tiel, E4B — stuck at menu / black screen</div></div>
+  </div>
+
+  <h2 id="ranking">TL;DR — Ranking</h2>
+  <table>
+    <tr><th>Rank</th><th>Model</th><th>Score</th><th>Verdict</th><th>Runtime proof</th><th>LOC</th></tr>
+    <tr><td><strong>1</strong></td><td><strong>qwen3-8-RIDGE</strong></td><td><strong>9.6</strong></td><td><span class="badge pass">✓ pass</span></td><td>score 20 · life lost · CAM MANUAL · 0 errors</td><td>906</td></tr>
+    <tr><td><strong>2</strong></td><td><strong>qwen3-8-Q4XS</strong></td><td><strong>9.5</strong></td><td><span class="badge pass">✓ pass</span></td><td>score 80 · trail · 0 errors</td><td>1023</td></tr>
+    <tr><td><strong>3</strong></td><td><strong>qwen3-8-Q3S</strong></td><td><strong>9.4</strong></td><td><span class="badge pass">✓ pass</span></td><td>score 10 · life lost · 0 errors</td><td>1056</td></tr>
+    <tr><td><strong>4</strong></td><td><strong>qwen3-8-Q2</strong></td><td><strong>9.2</strong></td><td><span class="badge pass">✓ pass</span></td><td>score 20 · 0 errors</td><td>888</td></tr>
+    <tr><td><strong>5</strong></td><td><strong>qwen3-8-Q3XL</strong></td><td><strong>9.1</strong></td><td><span class="badge pass">✓ pass</span></td><td>score 30 · burst · 0 errors</td><td>975</td></tr>
+    <tr><td><strong>6</strong></td><td><strong>gemma4-26A4B</strong></td><td><strong>8.8</strong></td><td><span class="badge pass">✓ pass</span></td><td>score 70 · CAM MANUAL · 0 errors</td><td>696</td></tr>
+    <tr><td>7</td><td>qwen3-5-9b-Q8</td><td>3.0</td><td><span class="badge fail">✕ fail</span></td><td><code>reading 'mesh'</code> at load · menu-only</td><td>1163</td></tr>
+    <tr><td>8</td><td>gpt-20-Q8</td><td>2.5</td><td><span class="badge fail">✕ fail</span></td><td><code>diff.abs</code> per frame · black screen</td><td>657</td></tr>
+    <tr><td>9</td><td>ornith-1-5-9b</td><td>2.0</td><td><span class="badge fail">✕ fail</span></td><td><code>RoundedBoxGeometry</code> never imported · black</td><td>902</td></tr>
+    <tr><td>10</td><td>tiel-coder-35b-IQ3_XXS</td><td>1.8</td><td><span class="badge fail">✕ fail</span></td><td><code>THREE undefined</code> (addon imported, THREE not) · no canvas</td><td>963</td></tr>
+    <tr><td>11</td><td>gemma4-E4B-Q8-uncesored</td><td>1.5</td><td><span class="badge fail">✕ fail</span></td><td><code>THREE undefined</code> · no canvas at all</td><td>1506</td></tr>
+  </table>
+  <div class="callout"><strong>Takeaway:</strong> static review lied — the prettiest code doesn't run. <strong><code>RIDGE</code> is the reference</strong> (launch, scoring, life loss, manual cam, mute, 0 errors). <code>gemma4-26A4B</code> went from static-last (7.0) to runtime-solid (8.8, highest test score 70). Late arrival <code>tiel</code> mirrors <code>ornith</code>'s bug in reverse. Every failure is a one-line-class bug — see footnotes.</div>
+
+  <h2 id="tested">How This Was Tested</h2>
+  <p><strong>Static + runtime.</strong> Local <code>http.server</code> + headless Chromium (SwiftShader WebGL, Playwright, CDN reachable). Per model: load → wait → screenshot → <kbd>Space</kbd> → arrows → <kbd>Space</kbd> → screenshot → <kbd>C</kbd>/<kbd>R</kbd>/<kbd>M</kbd>; round 2 captured error stacks, tried click fallback, sanity-checked camera/mute.</p>
+  <table>
+    <tr><th>Model</th><th>Runtime observation</th></tr>
+    <tr><td>RIDGE</td><td>overlay hides, ball plays, <strong>score 20</strong>, life lost (♥♥·), <code>CAM: MANUAL</code>, 0 errors</td></tr>
+    <tr><td>Q4XS</td><td><code>START→READY→PLAYING</code> per spec, <strong>score 80</strong>, trail ghosts, 0 errors</td></tr>
+    <tr><td>Q3S</td><td><strong>score 10</strong>, life lost (2 hearts), 0 errors</td></tr>
+    <tr><td>Q2</td><td><strong>score 20</strong>, 0 errors</td></tr>
+    <tr><td>Q3XL</td><td><strong>score 30</strong>, burst particles mid-flight, 0 errors</td></tr>
+    <tr><td>gemma26A</td><td><strong>score 70</strong>, ball + trail flying, <code>CAM: MANUAL</code>, 0 errors</td></tr>
+    <tr><td>qwen3-5</td><td><code>reading 'mesh'</code> at load; frozen menu; click fails; no 3D</td></tr>
+    <tr><td>gpt-20</td><td><code>diff.abs is not a function</code> ×29; READY then loop dies pre-render → black</td></tr>
+    <tr><td>ornith</td><td><code>THREE.RoundedBoxGeometry is not a constructor</code> at paddle creation; black + menu</td></tr>
+    <tr><td>tiel</td><td><code>THREE is not defined</code> (imports only <code>{ RoundedBoxGeometry }</code>, never <code>THREE</code>); polished menu, no canvas, Space/click dead</td></tr>
+    <tr><td>E4B</td><td><code>THREE is not defined</code> (zero imports); no <code>&lt;canvas&gt;</code> created</td></tr>
+  </table>
+  <div class="callout">Not covered: full playthrough to victory/game-over + restart (too slow to bot-play). Life loss was observed live (RIDGE, Q3S), exercising the same path.</div>
+
+  <h2 id="rubric">Scoring Rubric</h2>
+  <p><code>10</code> = perfect spec <strong>and</strong> runs clean. <code>−6…−8.5</code> fatal runtime error (menu-stuck / black / nothing renders ⇒ fail whatever the static polish) · <code>−1</code> per missing polish group in a <em>working</em> build (octave/victory/particles/border/cam-jump) · <code>−0.5</code> structure nit.</p>
+  <p class="muted" style="font-size:12px">Playability dominates: a working 8.8 beats a beautiful 3.0. Gallery adds <strong>func</strong> / <strong>quality</strong> / <strong>LOC</strong>.</p>
+
+  <h2 id="matrix">Compliance Matrix</h2>
+  <div class="callout" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+    <span><span class="badge pass">✓ pass</span> works / meets spec</span>
+    <span><span class="badge fail">✕ fail</span> broken at runtime</span>
+    <span><span class="badge partial">⚠ partial</span> deviation, still playable</span>
+  </div>
+  <p class="muted" style="font-size:11px;margin-bottom:0">Lead row is runtime. <code>—</code> = unverifiable (init/loop dies first). Columns: <code>RIDGE</code> · <code>Q4XS</code> · <code>Q3S</code> · <code>Q2</code> · <code>Q3XL</code> · <code>26A</code> · <code>Q5</code>=qwen3-5 · <code>gpt</code> · <code>orn</code> · <code>tiel</code> · <code>E4B</code></p>
+  <table>
+    <tr><th>Criterion</th><th>RIDGE</th><th>Q4XS</th><th>Q3S</th><th>Q2</th><th>Q3XL</th><th>26A</th><th>Q5</th><th>gpt</th><th>orn</th><th>tiel</th><th>E4B</th></tr>
+    <tr><td><strong>▶ Runtime: renders + launches + scores, 0 errors</strong></td><td><strong>✓</strong></td><td><strong>✓</strong></td><td><strong>✓</strong></td><td><strong>✓</strong></td><td><strong>✓</strong></td><td><strong>✓</strong></td><td>✕</td><td>✕</td><td>✕</td><td>✕</td><td>✕</td></tr>
+    <tr><td>importmap + shims exact</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✕</td></tr>
+    <tr><td>rAF + getDelta clamp</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>—</td><td>—</td><td>—</td><td>—</td><td>✕</td></tr>
+    <tr><td>ACES + PCFSoft</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>—</td><td>—</td><td>—</td><td>—</td><td>✕</td></tr>
+    <tr><td>Playfield + physics</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+    <tr><td>Effects (death/pulse/trail/burst/shake)</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>⚠<span style="font-size:10px;color:var(--partial)"> °</span></td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+    <tr><td>Manual cam (takeover/clamps/R)</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>⚠<span style="font-size:10px;color:var(--partial)"> #</span></td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+    <tr><td>Audio octave + jingles + mute</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✕<span style="font-size:10px;color:var(--fail)"> ✚</span></td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+    <tr><td>HUD + screens / single file</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>⚠</td><td>✓</td><td>✓</td><td>✓</td></tr>
+  </table>
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin:10px 0">
+    <strong style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:0.4px">Failure evidence — exact errors</strong>
+    <ul style="margin:8px 0 0 16px;padding:0;font-size:12px;line-height:1.6;color:var(--muted)">
+      <li><strong>qwen3-5</strong> — <code>Cannot read properties of undefined (reading 'mesh')</code> at load; Space and click both dead, no 3D scene.</li>
+      <li><strong>gpt-20</strong> — <code>diff.abs is not a function</code> (<code>Vector3</code> has no <code>.abs()</code>), thrown per frame before <code>render</code> → black at READY. Fix: component-wise <code>Math.abs</code>.</li>
+      <li><strong>ornith</strong> — <code>new THREE.RoundedBoxGeometry(...)</code> with only <code>import * as THREE</code>; addon never imported; dies at paddle creation (canvas exists, stays black). Fix: one import line. (Second one-line-bug contest for this model.)</li>
+      <li><strong>tiel</strong> — the exact mirror: imports only <code>{ RoundedBoxGeometry }</code>, never <code>THREE</code>; dies even earlier, no canvas created. Fix: one import line.</li>
+      <li><strong>E4B</strong> — <code>THREE is not defined</code>; module has zero <code>import</code> statements, no canvas created. Worst failure.</li>
+      <li><strong>26A4B (°/# /✚)</strong> — frozen burst particles, no border, cam jump, mono beeps, no victory jingle — yet score-70 playable, hence pass.</li>
+    </ul>
+  </div>
+
+  <h2 id="breakdown">Detailed Breakdown</h2>
+
+  <div class="tier t1">
+    <h3>Tier 1 — Verified playable</h3>
+    <h4>1) qwen3-8-RIDGE — 9.6 · 906 lines</h4>
+    <p><strong>Reference:</strong> launch, <strong>score 20</strong>, life loss, <code>CAM: MANUAL</code>, mute, 0 errors — all in one session. Octave audio, takeover cam, 260 stars.</p>
+    <h4>2) qwen3-8-Q4XS — 9.5 · 1023 lines</h4>
+    <p>Highest test score (<strong>80</strong>), visible trail. Spec-correct <code>START→READY→PLAYING</code>. 0 errors.</p>
+    <h4>3) qwen3-8-Q3S — 9.4 · 1056 lines</h4>
+    <p><strong>Score 10</strong> + observed life loss. 0 errors.</p>
+    <h4>4) qwen3-8-Q2 — 9.2 · 888 lines</h4>
+    <p><strong>Score 20</strong>, 0 errors. Most compact worker.</p>
+    <h4>5) qwen3-8-Q3XL — 9.1 · 975 lines</h4>
+    <p><strong>Score 30</strong>, burst caught mid-flight. 0 errors.</p>
+    <h4>6) gemma4-26A4B — 8.8 · 696 lines — runtime comeback</h4>
+    <p>Static-last → runtime-solid: <strong>score 70</strong>, manual cam, 0 errors. Polish gaps (mono audio, frozen bursts) don't stop play. <strong>Pass.</strong></p>
+  </div>
+
+  <div class="tier t2">
+    <h3>Tier 2 — Broken at runtime</h3>
+    <h4>7) qwen3-5-9b — 3.0 · 1163 lines</h4>
+    <p>Prettiest corpse: full menu/HUD, OOP design — <code>reading 'mesh'</code> at load, Space and click dead.</p>
+    <h4>8) gpt-20-Q8 — 2.5 · 657 lines</h4>
+    <p>Reaches READY, then <code>diff.abs()</code> kills every frame pre-render. Black. One-line fix.</p>
+    <h4>9) ornith-1-5-9b — 2.0 · 902 lines</h4>
+    <p>Was #4 statically. Missing addon import kills init. Black + menu. One-line fix.</p>
+    <h4>10) tiel-coder-35b-IQ3_XXS — 1.8 · 963 lines — late, tested</h4>
+    <p>Arrived after the first pass, same harness: <code>THREE is not defined</code> — mirrors ornith in reverse (addon imported, <code>THREE</code> itself not). Exact shims+importmap, polished rainbow menu, no canvas, Space/click dead. One-line fix.</p>
+    <h4>11) gemma4-E4B — 1.5 · 1506 lines</h4>
+    <p>Largest file, zero runtime: no imports, no canvas. Only static DOM visible.</p>
+  </div>
+
+  <h2 id="env">Environment · Hardware</h2>
+  <div class="callout">Captured via <code>fastfetch</code> on the inference host. Runtime tests ran here (headless Chromium + SwiftShader, unpkg reachable).</div>
+  <table>
+    <tr><th>Component</th><th>Value</th></tr>
+    <tr><td>Host</td><td><code>A320M-HD2</code></td></tr>
+    <tr><td>OS</td><td><code>CachyOS x86_64</code> · Kernel <code>7.2.0-1-cachyos</code></td></tr>
+    <tr><td>CPU</td><td><code>AMD Ryzen 5 1600 (12) @ 3.70 GHz</code> — 6c/12t Zen 1</td></tr>
+    <tr><td>GPU</td><td><code>NVIDIA GeForce RTX 4060 Ti [Discrete]</code> (16GB)</td></tr>
+    <tr><td>Memory</td><td><code>15.53 GiB</code> + Swap <code>15.53 GiB</code></td></tr>
+    <tr><td>Disk</td><td><code>295.40 GiB btrfs</code> (221.38 — 75%)</td></tr>
+    <tr><td>Display</td><td><code>G27F 1920×1080 @ 60 Hz</code></td></tr>
+    <tr><td>Shell</td><td><code>fish 4.8.1</code> · <code>10.5p1</code> · Uptime <code>2h 7m</code></td></tr>
+    <tr><td>Packages</td><td><code>1404 pacman + 11 flatpak</code></td></tr>
+  </table>
+  <p class="muted" style="font-size:11px">16GB VRAM → <code>n-gpu-layers 26</code> + heavy quants; Zen 1 → <code>draft-mtp 2–4</code>. Results for <strong>RTX 4060 Ti 16GB + R5 1600</strong>. Gallery needs internet (three.js CDN) + <code>http://</code>.</p>
+</main>
+<footer>Generated from <code>report.md</code> · static + runtime evidence</footer>
+</body>
+</html>
