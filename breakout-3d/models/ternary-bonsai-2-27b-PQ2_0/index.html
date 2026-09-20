@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>NEBULA BREAKOUT — Three.js</title>
+<style>
+  :root{
+    --cyan:#4fc3f7;
+    --cyan2:#29c7ff;
+    --accent:#a78bfa;
+    --gold:#ffb74d;
+    --pink:#ff5252;
+    --bg:var(--ink);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{
+    width:100%;height:100%;
+    background:radial-gradient(circle at 50% 25%, #0b1024 0%, var(--ink) 60%);
+    overflow:hidden;
+    -webkit-font-smoothing:antialiased;
+    font-family:system-ui,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    user-select:none;
+    -webkit-user-select:none;
+  }
+  #stage{
+    position:absolute;inset:50%;width:800px;height:600px;
+    transform:translate(-50%,-50%);
+    background:var(--ink);
+    border:1px solid rgba(79,195,247,.16);
+    box-shadow:0 0 60px rgba(79,195,247,.14), inset 0 0 30px rgba(0,0,0,.5);
+    border-radius:4px;
+    touch-action:none;
+  }
+  #stage canvas{display:block;width:100%;height:100%;touch-action:none}
+
+  /* ---------- HUD ---------- */
+  #hud{
+    position:absolute;left:16px;top:14px;right:16px;
+    display:flex;gap:22px;align-items:center;
+    color:#d9e8ff;pointer-events:none;letter-spacing:.04em;
+    text-shadow:0 1px 6px rgba(0,0,0,.8);
+  }
+  #scoreBox{display:flex;align-items:baseline;gap:10px}
+  #scoreLabel{
+    font-size:11px;font-weight:600;letter-spacing:.22em;opacity:.55;text-transform:uppercase;
+  }
+  #scoreVal{
+    font-size:30px;font-weight:800;font-variant-numeric:tabular-nums;
+    color:#f0fbff;text-shadow:0 0 14px rgba(79,195,247,.55);
+    display:inline-block;
+  }
+  #scoreVal.pop{animation:scorePop .28s cubic-bezier(.2,.9,.3,1.4)}
+  @keyframes scorePop{
+    0%{transform:scale(1) translate(0,0)}
+    40%{transform:scale(1.32) translate(0,-4px);color:#ffffff}
+    100%{transform:scale(1) translate(0,0)}
+  }
+  #livesBox{display:flex;align-items:center;gap:4px;font-size:19px}
+  #livesLabel{font-size:11px;font-weight:600;letter-spacing:.22em;opacity:.55;text-transform:uppercase;margin-right:2px}
+  .heart{color:#ff5252;text-shadow:0 0 10px rgba(255,82,82,.8)}
+  .heart.empty{color:#35415e;text-shadow:none}
+  #camLabel{
+    font-size:12px;font-weight:600;letter-spacing:.14em;opacity:.62;
+    display:flex;align-items:center;gap:6px;
+  }
+  #muteLabel{
+    font-size:16px;opacity:.9;
+  }
+
+  #launchHint{
+    position:absolute;left:50%;top:12px;transform:translateX(-50%);
+    font-size:15px;font-weight:700;letter-spacing:.3em;text-transform:uppercase;
+    color:#eaf6ff;text-shadow:0 0 14px rgba(79,195,247,.7);
+    pointer-events:none;opacity:0;
+  }
+  #launchHint.show{animation:hintBlink 1.05s steps(2) infinite}
+  @keyframes hintBlink{0%,100%{opacity:.95}50%{opacity:.3}}
+
+  /* ---------- Overlay ---------- */
+  #overlay{
+    position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
+    justify-content:center;text-align:center;color:#eef4ff;
+    background:linear-gradient(180deg, rgba(6,10,24,0) 0%, rgba(4,7,18,.88) 45%, rgba(3,5,12,.95) 100%);
+    pointer-events:none;
+    opacity:0;transition:opacity .28s ease;
+  }
+  #overlay.show{opacity:1}
+  #ovTitle{
+    font-size:54px;font-weight:900;letter-spacing:.06em;line-height:1.05;
+    background:linear-gradient(90deg,#9feaff,#4fc3f7 40%,#66bb6a 70%,#a78bfa 100%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    filter:drop-shadow(0 0 24px rgba(79,195,247,.5));
+  }
+  #ovSub{
+    margin-top:18px;font-size:17px;letter-spacing:.28em;text-transform:uppercase;opacity:.8;
+    animation:blink 1.1s ease-in-out infinite;
+  }
+  @keyframes blink{50%{opacity:.22}}
+  #hints{
+    margin-top:30px;background:rgba(10,14,32,.78);border:1px solid rgba(79,195,247,.22);
+    border-radius:10px;padding:16px 24px;text-align:left;color:#b9cfe8;
+    font-size:13px;line-height:1.9;letter-spacing:.04em;
+  }
+  .k{
+    display:inline-block;min-width:3.4em;text-align:center;font-weight:700;font-size:12px;
+    background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.18);
+    border-radius:5px;padding:2px 0;margin-right:10px;
+    color:#dfeaff;letter-spacing:.06em;
+  }
+  #ovNote{
+    margin-top:14px;font-size:12px;color:#6f86ad;letter-spacing:.12em;
+  }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="hud">
+    <div id="scoreBox">
+      <span id="scoreLabel">Score</span>
+      <span id="scoreVal">0</span>
+    </div>
+    <div id="livesBox">
+      <span id="livesLabel">Lives</span>
+      <span id="livesVal"></span>
+    </div>
+    <div id="camLabel">CAM: <span id="camMode">AUTO</span></div>
+    <div id="muteLabel">🔊</div>
+  </div>
+  <div id="launchHint">SPACE · LAUNCH</div>
+  <div id="overlay">
+    <div id="ovTitle">NEBULA BREAKOUT</div>
+    <div id="ovSub">Press space to start</div>
+    <div id="ovNote">destroy all 40 bricks to win · 3 lives</div>
+    <div id="hints">
+      <div><span class="k">◄ ► / A D</span><span>move paddle</span></div>
+      <div><span class="k">SPACE</span><span>launch · pause</span></div>
+      <div><span class="k">C</span><span>camera mode</span></div>
+      <div><span class="k">M</span><span>mute audio</span></div>
+      <div><span class="k">R</span><span>reset camera</span></div>
+    </div>
+  </div>
+</div>
+
+<script async src="https://unpkg.com/es-module-shims@1.8.0/dist/es-module-shims.js"></script>
+<script
+ type="importmap">{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"}}</script>
+
+<script type="module" shims="true">
+import * as THREE from "three";
+import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
+
+/* ============================================================
+   CONSTANTS
+   ============================================================ */
+const W = 800, H = 600;
+
+const LEFT = -6, RIGHT = 6, TOP = 8, FLOOR_Y = -6;
+const PADDLE_Y = -4.5;
+const PADDLE_W = 2.4, PADDLE_H = 0.3, PADDLE_D = 0.8;
+const PADDLE_SPEED = 11;
+
+const BALL_R = 0.25;
+const BALL_SPEED = 16;
+
+const COLS = 8, ROWS = 5;
+const BRICK_W = 1.3, BRICK_H = 0.55, BRICK_D = 0.9;
+const BRICK_X0 = -5.25, BRICK_X_SP = 1.5;
+const BRICK_Y0 = 4.5, BRICK_Y_SP = 0.85;
+const BRICK_COLORS = [0xff5252, 0xffb74d, 0xffd54f, 0x66bb6a, 0x4fc3f7];
+const BRICK_SCORE = 10;
+const START_LIVES = 3;
+
+// auto camera
+const CAM_BASE = new THREE.Vector3(0, 9, 14);
+const CAM_TARGET = new THREE.Vector3(0, 1, 0);
+const CAM_BASE_X = 0, CAM_BASE_Y = 9, CAM_BASE_Z = 14;
+
+// manual orbit defaults ≈ auto camera base
+const MAN_YAW = 0;
+const MAN_PITCH = 0.519;
+const MAN_DIST = 16.16;
+const MAN_DIST_MIN = 8, MAN_DIST_MAX = 30;
+const MAN_PITCH_MIN = 0.08, MAN_PITCH_MAX = 1.35;
+
+// states
+const START = "START";
+const READY = "READY";
+const PLAYING = "PLAYING";
+const PAUSED = "PAUSED";
+const GAMEOVER = "GAMEOVER";
+const VICTORY = "VICTORY";
+
+// timings
+const SHAKET = 0.35;
+const SQ = 0.1;
+const DEATH_T = 0.25;
+
+/* ============================================================
+   RENDERER / SCENE / CAMERA
+   ============================================================ */
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(W, H);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.1;
+document.getElementById("stage").prepend(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x06080f);
+scene.fog = new THREE.Fog(0x06080f, 38, 75);
+
+const camera = new THREE.PerspectiveCamera(60, W / H, 0.1, 100);
+camera.position.copy(CAM_BASE);
+camera.lookAt(CAM_TARGET);
+
+const clock = new THREE.Clock();
+let elapsed = 0;
+
+/* ============================================================
+   LIGHTS
+   ============================================================ */
+scene.add(new THREE.AmbientLight(0x404040, 1.2));
+
+const sun = new THREE.DirectionalLight(0xffffff, 1.7);
+sun.position.set(6, 16, 9);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.camera.left = -10;
+sun.shadow.camera.right = 10;
+sun.shadow.camera.top = 12;
+sun.shadow.camera.bottom = -10;
+sun.shadow.camera.near = 2;
+sun.shadow.camera.far = 45;
+sun.shadow.bias = -0.0003;
+sun.shadow.normalBias = 0.02;
+scene.add(sun);
+
+const rim = new THREE.DirectionalLight(0x4a6cff, 0.5);
+rim.position.set(-8, 4, -10);
+scene.add(rim);
+
+const ballLight = new THREE.PointLight(0x66d9ff, 1.2);
+ballLight.range = 9;
+ballLight.decay = 2;
+scene.add(ballLight);
+
+/* ============================================================
+   PROCEDURAL CANVAS TEXTURES
+   ============================================================ */
+function canvasTex(w, h, draw) {
+  const c = document.createElement("canvas");
+  c.width = w; c.height = h;
+  const g = c.getContext("2d");
+  draw(g, w, h);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
+function radialGlow(g, cx, cy, r0, r1, stops) {
+  const gr = g.createRadialGradient(cx, cy, r0, cx, cy, r1);
+  stops.forEach(s => gr.addColorStop(s[0], s[1]));
+  return gr;
+}
+
+// Floor 512x512
+const floorTex = canvasTex(512, 512, (g, w, h) => {
+  g.fillStyle = "#0d1226";
+  g.fillRect(0, 0, w, h);
+  // central radial glow
+  g.fillStyle = radialGlow(g, w/2, h/2, 10, w/2, [
+    [0, "rgba(90,160,255,0.35)"],
+    [0.35, "rgba(60,110,210,0.14)"],
+    [1, "rgba(0,0,0,0)"]
+  ]);
+  g.fillRect(0, 0, w, h);
+  // fine subgrid (32px)
+  g.strokeStyle = "rgba(110,150,255,0.14)";
+  g.lineWidth = 1;
+  for (let i = 0; i <= w; i += 32) {
+    g.beginPath(); g.moveTo(i, 0); g.lineTo(i, h); g.stroke();
+    g.beginPath(); g.moveTo(0, i); g.lineTo(w, i); g.stroke();
+  }
+  // main grid (64px)
+  g.strokeStyle = "rgba(140,190,255,0.30)";
+  g.lineWidth = 1.5;
+  for (let i = 0; i <= w; i += 64) {
+    g.beginPath(); g.moveTo(i, 0); g.lineTo(i, h); g.stroke();
+    g.beginPath(); g.moveTo(0, i); g.lineTo(w, i); g.stroke();
+  }
+  // edge vignette
+  g.fillStyle = radialGlow(g, w/2, h/2, w * 0.35, w * 0.75, [
+    [0, "rgba(0,0,0,0)"],
+    [1, "rgba(0,0,0,0.78)"]
+  ]);
+  g.fillRect(0, 0, w, h);
+});
+
+// Bricks 256x96 per row
+const brickTexs = BRICK_COLORS.map(color => {
+  return canvasTex(256, 96, (g, w, h) => {
+    // base row color
+    g.fillStyle = "#" + color.toString(16).padStart(8, "0").slice(2);
+    g.fillRect(0, 0, w, h);
+    // vertical gloss gradient: bright top -> dark bottom
+    const gr = g.createLinearGradient(0, 0, 0, h);
+    gr.addColorStop(0, "rgba(255,255,255,0.35)");
+    gr.addColorStop(0.45, "rgba(255,255,255,0.06)");
+    gr.addColorStop(1, "rgba(0,0,0,0.35)");
+    g.fillStyle = gr;
+    g.fillRect(0, 0, w, h);
+    // ~40 subtle random white streaks
+    for (let i = 0; i < 40; i++) {
+      const x = Math.random() * w;
+      const y = Math.random() * h;
+      const len = 3 + Math.random() * 16;
+      const a = Math.random() * Math.PI * 2;
+      g.strokeStyle = "rgba(255,255,255," + (0.04 + Math.random() * 0.08).toFixed(3) + ")";
+      g.lineWidth = 1;
+      g.beginPath();
+      g.moveTo(x, y);
+      g.lineTo(x + Math.cos(a) * len, y + Math.sin(a) * len);
+      g.stroke();
+    }
+    // bevel border stroke
+    g.strokeStyle = "rgba(255,255,255,0.22)";
+    g.lineWidth = 2.5;
+    g.strokeRect(1, 1, w - 2, h - 2);
+    g.strokeStyle = "rgba(0,0,0,0.30)";
+    g.lineWidth = 2;
+    g.strokeRect(4, 4, w - 8, h - 8);
+  });
+});
+
+// Paddle 256x64
+const paddleTex = canvasTex(256, 64, (g, w, h) => {
+  const gr = g.createLinearGradient(0, 0, 0, h);
+  gr.addColorStop(0, "#9feaff");
+  gr.addColorStop(0.5, "#29c7ff");
+  gr.addColorStop(1, "#0a6fa8");
+  g.fillStyle = gr;
+  g.fillRect(0, 0, w, h);
+  // center stripe
+  g.fillStyle = "rgba(255,255,255,0.5)";
+  g.fillRect(w/2 - 5, 0, 10, h);
+  // two edge accents
+  g.fillStyle = "rgba(255,255,255,0.85)";
+  g.fillRect(6, 0, 3, h);
+  g.fillRect(w - 9, 0, 3, h);
+  // subtle top/bottom bevel
+  g.fillStyle = "rgba(255,255,255,0.25)";
+  g.fillRect(0, 0, w, 4);
+  g.fillStyle = "rgba(0,0,0,0.3)";
+  g.fillRect(0, h - 4, w, 4);
+});
+
+// Backdrop 1024x512
+const backdropTex = canvasTex(1024, 512, (g, w, h) => {
+  const gr = g.createLinearGradient(0, 0, 0, h);
+  gr.addColorStop(0, "#0a1028");
+  gr.addColorStop(0.45, "#070b1c");
+  gr.addColorStop(1, "#03050c");
+  g.fillStyle = gr;
+  g.fillRect(0, 0, w, h);
+  const blobs = [
+    [w * 0.20, h * 0.28, w * 0.26, "rgba(90,120,255,0.16)"],
+    [w * 0.72, h * 0.62, w * 0.30, "rgba(70,200,220,0.13)"],
+    [w * 0.50, h * 0.38, w * 0.36, "rgba(140,90,220,0.15)"]
+  ];
+  blobs.forEach(([cx, cy, r, col]) => {
+    g.fillStyle = radialGlow(g, cx, cy, 0, r, [[0, col], [1, "rgba(0,0,0,0)"]]);
+    g.fillRect(0, 0, w, h);
+  });
+});
+
+/* ============================================================
+   ENVIRONMENT
+   ============================================================ */
+// floor 46x46 at y=-6, receiveShadow
+const floorMesh = new THREE.Mesh(
+  new THREE.PlaneGeometry(46, 46),
+  new THREE.MeshStandardMaterial({ map: floorTex, roughness: 0.85, metalness: 0.1 })
+);
+floorMesh.rotation.x = -Math.PI / 2;
+floorMesh.position.y = FLOOR_Y;
+floorMesh.receiveShadow = true;
+scene.add(floorMesh);
+
+// LineLoop border frame around bounds (decoration; colliders are invisible)
+const borderLoop = new THREE.LineLoop(
+  new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(LEFT, FLOOR_Y, 0),
+    new THREE.Vector3(RIGHT, FLOOR_Y, 0),
+    new THREE.Vector3(RIGHT, TOP, 0),
+    new THREE.Vector3(LEFT, TOP, 0)
+  ]),
+  new THREE.LineBasicMaterial({ color: 0x4fc3f7, transparent: true, opacity: 0.28 })
+);
+scene.add(borderLoop);
+
+// backdrop plane 220x110 at (0,8,-48), fog disabled
+const backdropMesh = new THREE.Mesh(
+  new THREE.PlaneGeometry(220, 110),
+  new THREE.MeshBasicMaterial({ map: backdropTex, fog: false })
+);
+backdropMesh.position.set(0, 8, -48);
+scene.add(backdropMesh);
+
+// starfield ~260 points behind the playfield
+const STAR_N = 260;
+const starPts = new Array(STAR_N);
+for (let i = 0; i < STAR_N; i++) {
+  starPts[i] = new THREE.Vector3(
+    (Math.random() - 0.5) * 44,
+    (Math.random() - 0.5) * 34,
+    -8 - Math.random() * 38
+  );
+}
+const starGeo = new THREE.BufferGeometry().setFromPoints(starPts);
+const starMat = new THREE.PointsMaterial({
+  color: 0xcfe2ff, size: 0.22, sizeAttenuation: true, transparent: true, opacity: 0.75
+});
+scene.add(new THREE.Points(starGeo, starMat));
+
+/* ============================================================
+   PADDLE / BALL / BRICKS
+   ============================================================ */
+const paddleGeo = new RoundedBoxGeometry(PADDLE_W, PADDLE_H, PADDLE_D, 4, 0.1);
+const paddleMat = new THREE.MeshStandardMaterial({
+  map: paddleTex, roughness: 0.35, metalness: 0.5, emissive: 0x000000, emissiveIntensity: 0
+});
+const paddle = new THREE.Mesh(paddleGeo, paddleMat);
+paddle.position.set(0, PADDLE_Y, 0);
+paddle.castShadow = true;
+paddle.receiveShadow = true;
+scene.add(paddle);
+
+const ballGeo = new THREE.SphereGeometry(BALL_R, 24, 16);
+const ballMat = new THREE.MeshStandardMaterial({
+  color: 0x8ec9ff, roughness: 0.3, metalness: 0.4, emissive: 0x9feaff, emissiveIntensity: 0.4
+});
+const ball = new THREE.Mesh(ballGeo, ballMat);
+ball.castShadow = true;
+scene.add(ball);
+const ballVel = new THREE.Vector3(0, 0, 0);
+
+const bricks = [];
+const brickGeo = new RoundedBoxGeometry(BRICK_W, BRICK_H, BRICK_D, 4, 0.08);
+for (let row = 0; row < ROWS; row++) {
+  for (let col = 0; col < COLS; col++) {
+    const mat = new THREE.MeshStandardMaterial({
+      map: brickTexs[row], roughness: 0.3, metalness: 0.1,
+      emissive: 0x000000, emissiveIntensity: 0
+    });
+    const m = new THREE.Mesh(brickGeo, mat);
+    m.position.set(BRICK_X0 + col * BRICK_X_SP, BRICK_Y0 - row * BRICK_Y_SP, 0);
+    m.castShadow = true;
+    m.receiveShadow = false;
+    m.userData = { row, alive: true, dying: false, deathT: 0 };
+    bricks.push(m);
+    scene.add(m);
+  }
+}
+
+/* ============================================================
+   PARTICLES
+   ============================================================ */
+const MAX_PART = 160;
+const partGeo = new THREE.SphereGeometry(0.06, 6, 4);
+const particles = [];
+for (let i = 0; i < MAX_PART; i++) {
+  const m = new THREE.Mesh(
+    partGeo,
+    new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0 })
+  );
+  m.visible = false;
+  m.userData = { vx: 0, vy: 0, vz: 0, life: 0, maxLife: 0.7 };
+  scene.add(m);
+  particles.push(m);
+}
+
+function spawnBurst(pos, color) {
+  let used = 0;
+  for (const p of particles) {
+    if (used >= 10) break;
+    if (p.visible) continue;
+    p.visible = true;
+    p.material.color.set(color);
+    const a = Math.random() * Math.PI * 2;
+    const up = 0.5 + Math.random() * 2.0;
+    p.userData.vx = (Math.random() - 0.5) * 6;
+    p.userData.vy = up + Math.random() * 4;
+    p.userData.vz = (Math.random() - 0.5) * 6;
+    p.userData.life = 0.55 + Math.random() * 0.35;
+    p.userData.maxLife = p.userData.life;
+    p.scale.setScalar(1 + Math.random() * 0.5);
+    p.position.copy(pos).add(
+      new THREE.Vector3(
+        (Math.random() - 0.5) * 0.25,
+        (Math.random() - 0.5) * 0.25,
+        (Math.random() - 0.5) * 0.25
+      )
+    );
+    used++;
+  }
+}
+
+function updateParticles(dt) {
+  const GRAV = -14;
+  for (const p of particles) {
+    if (!p.visible) continue;
+    p.userData.vy += GRAV * dt;
+    p.position.x += p.userData.vx * dt;
+    p.position.y += p.userData.vy * dt;
+    p.position.z += p.userData.vz * dt;
+    p.userData.life -= dt;
+    const f = Math.max(0, p.userData.life / p.userData.maxLife);
+    p.material.opacity = f;
+    p.scale.setScalar(0.4 + 0.6 * f);
+    if (p.userData.life <= 0) {
+      p.visible = false;
+      p.material.opacity = 0;
+    }
+  }
+}
+
+/* ============================================================
+   BALL TRAIL
+   ============================================================ */
+const TRAIL_N = 12;
+const trailGeo = new THREE.SphereGeometry(BALL_R * 1.05, 10, 6);
+const trail = [];
+for (let i = 0; i < TRAIL_N; i++) {
+  const m = new THREE.Mesh(trailGeo, new THREE.MeshBasicMaterial({
+    color: 0x9feaff, transparent: true, opacity: 0
+  }));
+  m.visible = false;
+  scene.add(m);
+  trail.push(m);
+}
+
+function updateTrail() {
+  if (state !== PLAYING) {
+    for (const t of trail) t.visible = false;
+    return;
+  }
+  // oldest -> newest: shift back
+  for (let i = TRAIL_N - 1; i > 0; i--) trail[i].position.copy(trail[i - 1].position);
+  trail[0].position.copy(ball.position);
+  for (let i = 0; i < TRAIL_N; i++) {
+    trail[i].visible = true;
+    trail[i].material.opacity = ((TRAIL_N - i) / TRAIL_N) * 0.30;
+  }
+}
+
+/* ============================================================
+   CAMERA (AUTO + MANUAL + SHAKE)
+   ============================================================ */
+let camMode = "AUTO";
+let autoX = 0;
+let launchYO = 0;
+let shakeDur = 0;
+let mYaw = MAN_YAW, mPitch = MAN_PITCH, mDist = MAN_DIST;
+let dragging = false;
+let lastMX = 0, lastMY = 0;
+
+function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+
+function shakeVec() {
+  if (shakeDur <= 0) return [0, 0, 0];
+  const a = Math.max(0, shakeDur / 0.35);
+  const amp = 6 * a;
+  return [
+    (Math.random() * 2 - 1) * amp,
+    (Math.random() * 2 - 1) * amp,
+    (Math.random() * 2 - 1) * amp
+  ];
+}
+
+function applyAutoCam(dt) {
+  autoX += (paddle.position.x * 0.25 - autoX) * Math.min(1, dt * 4);
+  launchYO *= Math.exp(-dt * 3);
+  const [sx, sy, sz] = shakeVec();
+  camera.position.set(autoX + sx, CAM_BASE_Y + launchYO + sy, CAM_BASE_Z + sz);
+  camera.lookAt(CAM_TARGET);
+}
+
+function takeOverManual() {
+  const dx = camera.position.x - CAM_TARGET.x;
+  const dy = camera.position.y - CAM_TARGET.y;
+  const dz = camera.position.z - CAM_TARGET.z;
+  mDist = clamp(Math.hypot(dx, dy, dz), MAN_DIST_MIN, MAN_DIST_MAX);
+  mPitch = clamp(Math.atan2(dy, Math.hypot(dx, dz)), MAN_PITCH_MIN, MAN_PITCH_MAX);
+  mYaw = Math.atan2(dx, dz);
+  updateHud();
+}
+
+function applyManualCam() {
+  const [sx, sy, sz] = shakeVec();
+  const cp = Math.cos(mPitch) * mDist;
+  const sp = Math.sin(mPitch) * mDist;
+  camera.position.set(
+    CAM_TARGET.x + cp * Math.sin(mYaw) + sx,
+    CAM_TARGET.y + sp + sy,
+    CAM_TARGET.z + cp * Math.cos(mYaw) + sz
+  );
+  camera.lookAt(CAM_TARGET);
+}
+
+function resetCamera() {
+  if (camMode === "AUTO") {
+    autoX = 0;
+    launchYO = 0;
+    shakeDur = 0;
+    camera.position.set(CAM_BASE_X, CAM_BASE_Y, CAM_BASE_Z);
+    camera.lookAt(CAM_TARGET);
+  } else {
+    mYaw = MAN_YAW;
+    mPitch = MAN_PITCH;
+    mDist = MAN_DIST;
+  }
+}
+
+/* ============================================================
+   AUDIO
+   ============================================================ */
+let audioCtx = null;
+let muted = false;
+
+function ensureAudio() {
+  if (audioCtx) return;
+  try {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state !== "running") audioCtx.resume();
+  } catch (e) {}
+}
+
+function beep(freq, type, dur, vol) {
+  if (!audioCtx || muted) return;
+  const t0 = audioCtx.currentTime;
+  const out = audioCtx.createGain();
+  out.gain.setValueAtTime(vol, t0);
+  out.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  out.connect(audioCtx.destination);
+
+  const o1 = audioCtx.createOscillator();
+  o1.type = type;
+  o1.frequency.setValueAtTime(freq, t0);
+  o1.connect(out);
+
+  const o2 = audioCtx.createOscillator();
+  o2.type = type;
+  o2.frequency.setValueAtTime(freq * 2, t0);
+  const g2 = audioCtx.createGain();
+  g2.gain.setValueAtTime(vol * 0.25, t0);
+  g2.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  o2.connect(g2);
+  g2.connect(out);
+
+  o1.start(t0); o2.start(t0);
+  o1.stop(t0 + dur + 0.03);
+  o2.stop(t0 + dur + 0.03);
+}
+
+const sfxPaddle = () => beep(880, "square", 0.07, 0.18);
+const sfxBrick = () => beep(660, "triangle", 0.09, 0.22);
+const sfxLife = () => beep(220, "sawtooth", 0.35, 0.22);
+function sfxVictory() {
+  [523, 659, 784].forEach((f, i) => setTimeout(() => beep(f, "sine", 0.35, 0.2), i * 120));
+}
+function setMute(v) {
+  muted = v;
+  document.getElementById("muteLabel").textContent = muted ? "🔇" : "🔊";
+}
+
+/* ============================================================
+   STATE
+   ============================================================ */
+let state = START;
+let score = 0;
+let lives = START_LIVES;
+let squashT = 0;
+
+const scoreEl = document.getElementById("scoreVal");
+const livesEl = document.getElementById("livesVal");
+const camModeEl = document.getElementById("camMode");
+const hintEl = document.getElementById("launchHint");
+const overlay = document.getElementById("overlay");
+const ovTitle = document.getElementById("ovTitle");
+const ovSub = document.getElementById("ovSub");
+const ovNote = document.getElementById("ovNote");
+
+function showOverlay(cfg) {
+  if (cfg.title) ovTitle.textContent = cfg.title;
+  if (cfg.sub) ovSub.textContent = cfg.sub;
+  if (cfg.note) ovNote.textContent = cfg.note;
+  overlay.classList.add("show");
+  hintEl.classList.remove("show");
+}
+function hideOverlay() {
+  overlay.classList.remove("show");
+}
+function setScorePop(v) {
+  if (score === v) return;
+  score = v;
+  scoreEl.textContent = score;
+  scoreEl.classList.remove("pop");
+  void scoreEl.offsetWidth;
+  scoreEl.classList.add("pop");
+}
+function addScore(n) { setScorePop(score + n); }
+function updateHud() {
+  scoreEl.textContent = score;
+  let hearts = "";
+  for (let i = 0; i < START_LIVES; i++) {
+    hearts += i < lives ? "<span class='heart'>♥</span>" : "<span class='heart empty'>·</span>";
+  }
+  livesEl.innerHTML = hearts;
+  camModeEl.textContent = camMode;
+}
+function showLaunchHint(show) { hintEl.classList.toggle("show", show); }
+
+/* ============================================================
+   GAME CONTROL
+   ============================================================ */
+function resetBallOnPaddle() {
+  ball.position.set(paddle.position.x, PADDLE_Y + PADDLE_H / 2 + BALL_R, 0);
+  ballVel.set(0, 0, 0);
+  ball.visible = true;
+}
+
+function setState(s) {
+  state = s;
+  switch (s) {
+    case START:
+      showOverlay({ title: "NEBULA BREAKOUT", sub: "Press space to start", note: "destroy all 40 bricks to win · 3 lives" });
+      ball.visible = false;
+      break;
+    case READY:
+      // READY shows the game with the ball on paddle; show launch hint
+      hideOverlay();
+      showLaunchHint(true);
+      resetBallOnPaddle();
+      break;
+    case PLAYING:
+      hideOverlay();
+      showLaunchHint(false);
+      ball.visible = true;
+      break;
+    case PAUSED:
+      showOverlay({ title: "PAUSED", sub: "Press space to resume", note: "" });
+      showLaunchHint(false);
+      break;
+    case GAMEOVER:
+      showOverlay({ title: "GAME OVER", sub: "Press space to try again", note: "final score " + score });
+      showLaunchHint(false);
+      ball.visible = false;
+      break;
+    case VICTORY:
+      showOverlay({ title: "VICTORY", sub: "Press space for another round", note: "final score " + score });
+      showLaunchHint(false);
+      ball.visible = false;
+      sfxVictory();
+      break;
+  }
+  updateHud();
+}
+
+function launchBall() {
+  const a = (Math.random() - 0.5) * 0.5;
+  ballVel.set(Math.sin(a) * BALL_SPEED, Math.cos(a) * BALL_SPEED, 0);
+  launchYO = 0.3;
+  setState(PLAYING);
+}
+
+function loseLife() {
+  lives--;
+  shakeDur = SHAKET;
+  sfxLife();
+  if (lives <= 0) {
+    setState(GAMEOVER);
+  } else {
+    setState(READY);
+  }
+}
+
+function winGame() {
+  setState(VICTORY);
+}
+
+function fullReset() {
+  score = 0;
+  lives = START_LIVES;
+  autoX = 0;
+  launchYO = 0;
+  shakeDur = 0;
+  squashT = 0;
+  ballVel.set(0, 0, 0);
+  paddle.position.x = 0;
+  paddle.scale.set(1, 1, 1);
+  for (const b of bricks) {
+    b.userData.alive = true;
+    b.userData.dying = false;
+    b.userData.deathT = 0;
+    b.visible = true;
+    b.scale.set(1, 1, 1);
+    b.material.emissiveIntensity = 0;
+    b.material.emissive.set(0);
+  }
+  for (const p of particles) { p.visible = false; p.material.opacity = 0; }
+  for (const t of trail) t.visible = false;
+  state = START;
+  showOverlay({ title: "NEBULA BREAKOUT", sub: "Press space to start", note: "destroy all 40 bricks to win · 3 lives" });
+  ball.visible = false;
+  updateHud();
+}
+
+/* ============================================================
+   COLLISIONS
+   ============================================================ */
+function wallBounce() {
+  // left / right
+  if (ball.position.x - BALL_R < LEFT) {
+    ball.position.x = LEFT + BALL_R;
+    if (ballVel.x < 0) ballVel.x = Math.abs(ballVel.x);
+  } else if (ball.position.x + BALL_R > RIGHT) {
+    ball.position.x = RIGHT - BALL_R;
+    if (ballVel.x > 0) ballVel.x = -Math.abs(ballVel.x);
+  }
+  // top
+  if (ball.position.y + BALL_R > TOP) {
+    ball.position.y = TOP - BALL_R;
+    if (ballVel.y > 0) ballVel.y = -Math.abs(ballVel.y);
+  }
+}
+
+function paddleBounce() {
+  if (ballVel.y >= 0) return;
+  const halfP = PADDLE_W / 2;
+  const dx = ball.position.x - paddle.position.x;
+  const dy = ball.position.y - (PADDLE_Y + PADDLE_H / 2);
+  const overlapX = (halfP + BALL_R) - Math.abs(dx);
+  const overlapY = (PADDLE_H / 2 + BALL_R) - Math.abs(dy);
+  if (overlapX <= 0 || overlapY <= 0) return;
+  // hit from the top: reflect Y and aim
+  const offset = clamp(dx / halfP, -1, 1);
+  const angle = offset * (Math.PI / 3);
+  ballVel.set(Math.sin(angle) * BALL_SPEED, Math.cos(angle) * BALL_SPEED, 0);
+  ball.position.y = PADDLE_Y + PADDLE_H / 2 + BALL_R;
+  // squash
+  squashT = SQ;
+  paddleMat.emissiveIntensity = 0.8;
+  sfxPaddle();
+}
+
+function brickCollide() {
+  for (const b of bricks) {
+    if (!b.userData.alive) continue;
+    const bx = b.position.x, by = b.position.y, bz = b.position.z;
+    const dx = ball.position.x - bx;
+    const dy = ball.position.y - by;
+    const dz = ball.position.z - bz;
+    const ox = (BRICK_W / 2 + BALL_R) - Math.abs(dx);
+    const oy = (BRICK_H / 2 + BALL_R) - Math.abs(dy);
+    const oz = (BRICK_D / 2 + BALL_R) - Math.abs(dz);
+    if (ox <= 0 || oy <= 0 || oz <= 0) continue;
+    // reflect off face with least penetration
+    const minO = Math.min(ox, oy, oz);
+    if (minO === ox) {
+      ballVel.x = -Math.abs(ballVel.x);
+      ball.position.x = bx + (dx >= 0 ? 1 : -1) * (BRICK_W / 2 + BALL_R);
+    } else if (minO === oy) {
+      ballVel.y = -Math.abs(ballVel.y);
+      ball.position.y = by + (dy >= 0 ? 1 : -1) * (BRICK_H / 2 + BALL_R);
+    } else {
+      ballVel.z = -Math.abs(ballVel.z);
+      ball.position.z = bz + (dz >= 0 ? 1 : -1) * (BRICK_D / 2 + BALL_R);
+    }
+    // kill brick
+    b.userData.alive = false;
+    b.userData.dying = true;
+    b.userData.deathT = 0;
+    b.material.emissive.set(0xffffff);
+    b.material.emissiveIntensity = 2.0;
+    addScore(BRICK_SCORE);
+    sfxBrick();
+    spawnBurst(b.position.clone(), BRICK_COLORS[b.userData.row]);
+    return;
+  }
+}
+
+function floorCheck() {
+  if (ball.position.y < FLOOR_Y) {
+    loseLife();
+  }
+}
+
+function anyBrickAlive() {
+  for (const b of bricks) if (b.userData.alive) return true;
+  return false;
+}
+
+function updateBrickDeaths(dt) {
+  for (const b of bricks) {
+    if (!b.userData.dying) continue;
+    b.userData.deathT += dt;
+    const t = Math.min(1, b.userData.deathT / DEATH_T);
+    const s = 1 - t;
+    b.scale.setScalar(s);
+    b.material.emissiveIntensity = 2.0 * (1 - t);
+    if (t >= 1) {
+      b.visible = false;
+      b.userData.dying = false;
+      b.material.emissiveIntensity = 0;
+      b.material.emissive.set(0);
+    }
+  }
+  if (!anyBrickAlive() && state === PLAYING) {
+    winGame();
+  }
+}
+
+// ============================
+// PADDLE SQUASH
+// ============================
+function updateSquash(dt) {
+  if (squashT > 0) {
+    squashT -= dt;
+    const p = 1 - squashT / SQ; // 0..1
+    const f = Math.sin(Math.PI * p);
+    paddle.scale.set(1 + 0.12 * f, 1 - 0.22 * f, 1);
+    paddleMat.emissiveIntensity = 0.8 * (1 - p);
+  } else {
+    paddle.scale.set(1, 1, 1);
+    paddleMat.emissiveIntensity = 0;
+  }
+}
+
+/* ============================================================
+   MAIN LOOP
+   ============================================================ */
+function step(dt) {
+  if (state === READY || state === PLAYING) {
+    // paddle movement
+    let dir = 0;
+    if (keys.has("Left")) dir--;
+    if (keys.has("Right")) dir++;
+    if (dir !== 0) {
+      paddle.position.x = clamp(
+        paddle.position.x + dir * PADDLE_SPEED * dt,
+        LEFT + PADDLE_W / 2,
+        RIGHT - PADDLE_W / 2
+      );
+      if (state === READY) {
+        // ball rides paddle
+        ball.position.x = paddle.position.x;
+      }
+    }
+  }
+
+  // camera
+  if (camMode === "AUTO") applyAutoCam(dt);
+  else applyManualCam();
+
+  // shake decay
+  if (shakeDur > 0) shakeDur -= dt;
+
+  if (state === PLAYING) {
+    ball.position.addScaledVector(ballVel, dt);
+
+    // anti-stall
+    if (Math.abs(ballVel.y) < 1.5) {
+      ballVel.y = (ballVel.y >= 0 ? 1 : -1) * 1.5;
+    }
+
+    // collide
+    wallBounce();
+    paddleBounce();
+    brickCollide();
+    floorCheck();
+
+    if (state === PLAYING) {
+      // emissive pulse
+      ballMat.emissiveIntensity = 0.4 + 0.35 * (0.5 + 0.5 * Math.sin(elapsed * 8));
+      // trail
+      updateTrail();
+      // ball light
+      ballLight.position.set(ball.position.x, ball.position.y + 0.3, 1.5);
+    }
+  }
+
+  // always update (particles, deaths, squash)
+  updateParticles(dt);
+  updateBrickDeaths(dt);
+  updateSquash(dt);
+  // hide trail outside active play
+  if (state !== PLAYING) for (const t of trail) t.visible = false;
+}
+
+function render() {
+  requestAnimationFrame(render);
+  const dt = Math.min(clock.getDelta(), 0.05);
+  elapsed += dt;
+  step(dt);
+  renderer.render(scene, camera);
+}
+render();
+
+/* ============================================================
+   INPUT
+   ============================================================ */
+const keys = new Set();
+window.addEventListener("keydown", e => {
+  ensureAudio();
+  if (["ArrowLeft","ArrowRight","ArrowUp","ArrowDown"," "].includes(e.key)) e.preventDefault();
+
+  // any key in terminal states -> reset
+  if (state === GAMEOVER || state === VICTORY) {
+    fullReset();
+    return;
+  }
+
+  switch (e.key) {
+    case " ":
+      switch (state) {
+        case START:
+          setState(READY);
+          break;
+        case READY:
+          launchBall();
+          break;
+        case PLAYING:
+          ballVel.set(0, 0, 0);
+          setState(PAUSED);
+          break;
+        case PAUSED:
+          setState(PLAYING);
+          break;
+      }
+      break;
+    case "ArrowLeft": case "a": case "A":
+      keys.add("Left");
+      e.preventDefault();
+      break;
+    case "ArrowRight": case "d": case "D":
+      keys.add("Right");
+      e.preventDefault();
+      break;
+    case "c": case "C":
+      camMode = camMode === "AUTO" ? "MANUAL" : "AUTO";
+      if (camMode === "MANUAL") takeOverManual();
+      else resetCamera();
+      updateHud();
+      break;
+    case "m": case "M":
+      setMute(!muted);
+      break;
+    case "r": case "R":
+      resetCamera();
+      break;
+  }
+});
+window.addEventListener("keyup", e => {
+  if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") keys.delete("Left");
+  if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") keys.delete("Right");
+});
+window.addEventListener("click", () => {
+  if (state === GAMEOVER || state === VICTORY) fullReset();
+  ensureAudio();
+});
+
+// manual camera drag + zoom
+const stage = document.getElementById("stage");
+stage.addEventListener("mousedown", e => {
+  if (camMode !== "MANUAL") return;
+  dragging = true;
+  lastMX = e.clientX;
+  lastMY = e.clientY;
+  stage.style.cursor = "grabbing";
+});
+stage.addEventListener("mousemove", e => {
+  if (!dragging || camMode !== "MANUAL") return;
+  mYaw -= (e.clientX - lastMX) * 0.004;
+  mPitch = clamp(mPitch + (e.clientY - lastMY) * 0.004, MAN_PITCH_MIN, MAN_PITCH_MAX);
+  lastMX = e.clientX;
+  lastMY = e.clientY;
+});
+stage.addEventListener("mouseup", () => {
+  dragging = false;
+  stage.style.cursor = "";
+});
+stage.addEventListener("wheel", e => {
+  if (camMode !== "MANUAL") return;
+  e.preventDefault();
+  mDist = clamp(mDist + e.deltaY * 0.02, MAN_DIST_MIN, MAN_DIST_MAX);
+}, { passive: false });
+
+/* ============================================================
+   INIT
+   ============================================================ */
+updateHud();
+setState(START);
+</script>
+</body>
+</html>
+</function>
+</tool_call>
+<tool_call>
+<function=bash>
+<parameter=command>
+cd /workspace && wc -l index.html && echo "---" && head -5 index.html && echo "---" && tail -5 index.html

@@ -1,6 +1,6 @@
 # Models — Router Configurations (Breakout 3D test subset)
 
-> Source: router presets INI dump. Parsed 2026-09-02 (same host/run as the 2D edition). Filtered to the 11 models assigned for Breakout 3D (`results.json`). Commented `;` lines removed. Each section below is the **full resolved configuration** (defaults + overrides merged).
+> Source: router presets INI dump. Parsed 2026-09-02 (ternary-bonsai added 2026-09-18; same host/run as the 2D edition). Filtered to the 12 models assigned for Breakout 3D (`results.json`). Commented `;` lines removed. Each section below is the **full resolved configuration** (defaults + overrides merged). `ternary-bonsai-2-27b-PQ2_0` ran on the separate PrismML llama.cpp fork mini-router (its own `[*]` defaults; `PTQ1_0` sibling untested).
 
 Links: `prompt.md` · `report.md` / `report.html` · `results.json` · `index.html` (gallery) · `models-configurations.html` · `models/*/index.html`
 
@@ -24,7 +24,7 @@ See also `report.md` / `report.html` for implications (16GB VRAM → `n-gpu-laye
 
 ---
 
-## Tested for Breakout 3D (11) — rank order (runtime-verified)
+## Tested for Breakout 3D (12) — rank order (runtime-verified)
 
 | Rank | Breakout 3D dir | Router section | Score · Verdict | Hugging Face |
 |-----:|-----------------|----------------|-----------------|--------------|
@@ -33,12 +33,13 @@ See also `report.md` / `report.html` for implications (16GB VRAM → `n-gpu-laye
 | 3 | `models/qwen3-8-Q3S/index.html` | `[qwen3.8-27b-Q3S-unsloth]` | 9.4 · pass (score 10, 0 errors) | [Qwen3.8-27B-UD-IQ3_S](https://huggingface.co/unsloth/Qwen3-30B-A3B-GGUF) |
 | 4 | `models/qwen3-8-Q2/index.html` | `[qwen3.8-27-Q2_K_XL-unsloth]` | 9.2 · pass (score 20, 0 errors) | [Qwen3.8-27B-UD-Q2_K_XL](https://huggingface.co/unsloth/Qwen3-30B-A3B-GGUF) |
 | 5 | `models/qwen3-8-Q3XL/index.html` | `[qwen3.8-27b-Q3XL-unsloth]` | 9.1 · pass (score 30, 0 errors) | [Qwen3.8-27B-UD-Q3_K_XL](https://huggingface.co/unsloth/Qwen3-30B-A3B-GGUF) |
-| 6 | `models/gemma4-26A4B/index.html` | `[gemma4-26B-A4B-Q4]` | 8.8 · pass (score 70, 0 errors) | [Gemma-4-26B-A4B-it](https://huggingface.co/unsloth/gemma-4-26B-A4B-it-qat-GGUF) |
-| 7 | `models/qwen3-5-9b-Q8/index.html` | `[qwen3.5-9b-Q8-unsloth]` | 3.0 · fail (`reading 'mesh'`, menu-only) | [Qwen3.5-9B](https://huggingface.co/unsloth/Qwen3.5-9B-GGUF) |
-| 8 | `models/gpt-20-Q8/index.html` | `[gpt-20b-unsloth-Q8-UD]` | 2.5 · fail (`diff.abs`, black screen) | [gpt-oss-20b](https://huggingface.co/unsloth/gpt-oss-20b-GGUF) |
-| 9 | `models/ornith-1-5-9b/index.html` | `[ornith-1.5-9b]` | 2.0 · fail (addon never imported, black) | [Ornith-1.5-9B](https://huggingface.co/ornith-ai/Ornith-1.5-9B) |
-| 10 | `models/tiel-coder-35b-IQ3_XXS/index.html` | `[tiel-coder-35b-IQ3_XXS]` | 1.8 · fail (`THREE` never imported, no canvas) | [Tiel-Coder-35B-A3B](https://huggingface.co/peculiar-ragdoll/Tiel-Coder-35B-A3B-GGUF) |
-| 11 | `models/gemma4-E4B-Q8-uncesored/index.html` | `[gemma4-E4B-Q8-uncensored]` | 1.5 · fail (`THREE undefined`, no canvas) | [Gemma-4-E4B-Uncensored](https://huggingface.co/HauhauCS/Gemma-4-E4B-Uncensored-HauhauCS-Aggressive) |
+| 6 | `models/ternary-bonsai-2-27b-PQ2_0/index.html` | `[ternary-bonsai-2-27b-gguf-PQ2_0]` | 8.9 · pass (score 120, 0 errors; pause/resume stalls) | [Ternary-Bonsai-2-27B-PQ2_0](https://huggingface.co/prism-ml/Ternary-Bonsai-2-27B-gguf) |
+| 7 | `models/gemma4-26A4B/index.html` | `[gemma4-26B-A4B-Q4]` | 8.8 · pass (score 70, 0 errors) | [Gemma-4-26B-A4B-it](https://huggingface.co/unsloth/gemma-4-26B-A4B-it-qat-GGUF) |
+| 8 | `models/qwen3-5-9b-Q8/index.html` | `[qwen3.5-9b-Q8-unsloth]` | 3.0 · fail (`reading 'mesh'`, menu-only) | [Qwen3.5-9B](https://huggingface.co/unsloth/Qwen3.5-9B-GGUF) |
+| 9 | `models/gpt-20-Q8/index.html` | `[gpt-20b-unsloth-Q8-UD]` | 2.5 · fail (`diff.abs`, black screen) | [gpt-oss-20b](https://huggingface.co/unsloth/gpt-oss-20b-GGUF) |
+| 10 | `models/ornith-1-5-9b/index.html` | `[ornith-1.5-9b]` | 2.0 · fail (addon never imported, black) | [Ornith-1.5-9B](https://huggingface.co/ornith-ai/Ornith-1.5-9B) |
+| 11 | `models/tiel-coder-35b-IQ3_XXS/index.html` | `[tiel-coder-35b-IQ3_XXS]` | 1.8 · fail (`THREE` never imported, no canvas) | [Tiel-Coder-35B-A3B](https://huggingface.co/peculiar-ragdoll/Tiel-Coder-35B-A3B-GGUF) |
+| 12 | `models/gemma4-E4B-Q8-uncesored/index.html` | `[gemma4-E4B-Q8-uncensored]` | 1.5 · fail (`THREE undefined`, no canvas) | [Gemma-4-E4B-Uncensored](https://huggingface.co/HauhauCS/Gemma-4-E4B-Uncensored-HauhauCS-Aggressive) |
 
 > Naming: `gemma4-26A4B` on disk = `gemma4-26B-A4B-Q4` in router; `qwen3-8-Q2` = `qwen3.8-27-Q2_K_XL-unsloth` (router typo `27` vs `27b`). HF links point to the base model / GGUF repo; quantization is the local `*.gguf` file.
 
@@ -171,7 +172,7 @@ repeat-penalty     = 1.0
 
 ---
 
-## 9) ornith-1-5-9b — `[ornith-1.5-9b]` — 2.0 fail (runtime: addon never imported)
+## 10) ornith-1-5-9b — `[ornith-1.5-9b]` — 2.0 fail (runtime: addon never imported)
 
 - **Breakout 3D:** `models/ornith-1-5-9b/index.html` (902 lines) — rank 9, runtime fail (`THREE.RoundedBoxGeometry is not a constructor`; was static #4 before runtime testing)
 - **GGUF:** `ornith-1.5-9b/Ornith-1.5-9B-Q8_0.gguf`
@@ -269,7 +270,7 @@ Distinctive: smallest `ctx-size 32768`, `batch-size 1024`, largest `reasoning-bu
 
 ---
 
-## 7) qwen3-5-9b-Q8 — `[qwen3.5-9b-Q8-unsloth]` — 3.0 fail (runtime: `reading 'mesh'` at load, menu-only)
+## 8) qwen3-5-9b-Q8 — `[qwen3.5-9b-Q8-unsloth]` — 3.0 fail (runtime: `reading 'mesh'` at load, menu-only)
 
 - **Breakout 3D:** `models/qwen3-5-9b-Q8/index.html` (1163 lines, OOP `Game/Brick/Particle` classes)
 - **GGUF:** `qwen3.5-9b-Q8-unsloth/Qwen3.5-9B-Q8_0.gguf`
@@ -297,7 +298,7 @@ MTP-3.
 
 ---
 
-## 10) gemma4-E4B — `[gemma4-E4B-Q8-uncensored]` — 1.5 fail (runtime: `THREE is not defined`, no canvas)
+## 12) gemma4-E4B — `[gemma4-E4B-Q8-uncensored]` — 1.5 fail (runtime: `THREE is not defined`, no canvas)
 
 - **Breakout 3D:** `models/gemma4-E4B-Q8-uncesored/index.html` (1506 lines, largest; dir keeps `uncesored` typo)
 - **GGUF:** `gemma4-E4B-Q8-uncensored/Gemma-4-E4B-Uncensored-HauhauCS-Aggressive-Q8_K_P.gguf`
@@ -324,7 +325,7 @@ Simplest config, no reasoning/spec.
 
 ---
 
-## 8) gpt-20-Q8 — `[gpt-20b-unsloth-Q8-UD]` — 2.5 fail (runtime: `diff.abs` per frame, black screen)
+## 9) gpt-20-Q8 — `[gpt-20b-unsloth-Q8-UD]` — 2.5 fail (runtime: `diff.abs` per frame, black screen)
 
 - **Breakout 3D:** `models/gpt-20-Q8/index.html` (657 lines, smallest)
 - **GGUF:** `gpt-20b-unsloth-Q8-UD/gpt-oss-20b-UD-Q8_K_XL.gguf`
@@ -348,7 +349,38 @@ Minimal overrides.
 
 ---
 
-## 6) gemma4-26A4B — `[gemma4-26B-A4B-Q4]` — 8.8 pass (runtime: score 70, 0 errors)
+## 6) ternary-bonsai-2-27b-PQ2_0 — `[ternary-bonsai-2-27b-gguf-PQ2_0]` — 8.9 pass (runtime: score 120, 0 errors; pause/resume stalls)
+
+- **Breakout 3D:** `models/ternary-bonsai-2-27b-PQ2_0/index.html` (1113 lines) — new rank 6, runtime-verified
+- **GGUF:** `Ternary-Bonsai-2-27B-PQ2_0.gguf` (2-bit-slot ternary pack, 7.21 GB)
+- **mmproj:** `Ternary-Bonsai-2-27B-mmproj-Q8_0.gguf` (optional vision tower)
+- **Hugging Face:** [prism-ml/Ternary-Bonsai-2-27B-gguf](https://huggingface.co/prism-ml/Ternary-Bonsai-2-27B-gguf) — base derived from **Qwen3.8-27B**
+
+> Ran on a separate **PrismML llama.cpp fork** mini-router (stock llama.cpp rejects `PTQ1_0`/`PQ2_0`). Fork defaults mirrored explicitly. Only `PQ2_0` benchmarked.
+
+| Key | Value |
+|-----|-------|
+| `model` | `Ternary-Bonsai-2-27B-PQ2_0.gguf` |
+| `mmproj` | `Ternary-Bonsai-2-27B-mmproj-Q8_0.gguf` |
+| `ctx-size` / `jinja` | `65536` / `true` |
+| `reasoning-effort` / `preserve` / `budget` | `medium` / `true` / `4096` |
+| `n-gpu-layers` / `parallel` / `flash-attn` | `99` / `1` / `on` |
+| `cache-type-k` / `cache-type-v` | `q8_0` / `q8_0` |
+| `batch-size` / `ubatch-size` | `2048` / `512` |
+| `temp` / `top-p` / `top-k` / `min-p` | `1.0` / `0.95` / `20` / `0.0` |
+| `repeat-penalty` / `presence-penalty` | `1.0` / `0.0` |
+
+```ini
+[ternary-bonsai-2-27b-gguf-PQ2_0]
+model = Ternary-Bonsai-2-27B-PQ2_0.gguf
+mmproj = Ternary-Bonsai-2-27B-mmproj-Q8_0.gguf
+```
+
+Runtime: renders, launches, **score 120** (highest observed), manual cam + mute, 0 errors. Defect: pause zeroes `ballVel` and resume never restores it → ball stalls. Also leaks tool-call text after `</html>`.
+
+---
+
+## 7) gemma4-26A4B — `[gemma4-26B-A4B-Q4]` — 8.8 pass (runtime: score 70, 0 errors)
 
 - **Breakout 3D:** `models/gemma4-26A4B/index.html` (696 lines) — rank 6, runtime-verified
 - **GGUF:** `gemma4-26B-A4B-Q4/gemma-4-26B-A4B-it-qat-UD-Q4_K_XL.gguf`
@@ -380,7 +412,7 @@ Distinctive: only `n-gpu-layers 26` and `spec-draft-n-max 4` + explicit `model-d
 
 ---
 
-## 10) tiel-coder-35b-IQ3_XXS — `[tiel-coder-35b-IQ3_XXS]` — 1.8 fail (runtime-tested)
+## 11) tiel-coder-35b-IQ3_XXS — `[tiel-coder-35b-IQ3_XXS]` — 1.8 fail (runtime-tested)
 
 - **Breakout 3D:** `models/tiel-coder-35b-IQ3_XXS/index.html` (963 lines) — late submission, same harness: `THREE is not defined` (imports only `{ RoundedBoxGeometry }`, never `THREE`); exact shims+importmap, polished menu, no canvas
 - **GGUF:** `tiel-coder-35b-IQ3_XXS/Tiel-Coder-35B-A3B-UD-IQ3_XXS.gguf`

@@ -57,7 +57,7 @@
       <div class="brand-icon">◧</div>
       <div class="brand-text">
         <span class="brand-title">Breakout Lab</span>
-        <span class="brand-sub">Report · 11 models · 2026-09-02</span>
+        <span class="brand-sub">Report · 12 models · 2026-09-02 (ternary 09-18)</span>
       </div>
     </a>
     <nav class="tabs" aria-label="Primary">
@@ -74,7 +74,7 @@
   </div>
 </header>
 <main>
-  <p class="lead">Single-file <code>800×600</code> Breakout (Canvas + <code>requestAnimationFrame</code> + <code>deltaTime</code>). Static review only — no browser run.</p>
+  <p class="lead">Single-file <code>800×600</code> Breakout (Canvas + <code>requestAnimationFrame</code> + <code>deltaTime</code>). Static review + a targeted headless-Chromium probe for <code>ternary-bonsai-2-27b-PQ2_0</code> (which exposed a soft-lock).</p>
 
   <div class="toc">
     <strong>Contents</strong>
@@ -89,8 +89,9 @@
   </div>
 
   <div class="grid2">
-    <div class="kpi"><div class="n">5 / 11 pass</div><div class="l">Fully compliant — RIDGE, Q4XS, Q3S, Q2, Q3XL</div></div>
-    <div class="kpi"><div class="n">324 lines</div><div class="l">Reference (RIDGE) · smallest 244 (gpt-20) · largest 465 (tiel)</div></div>
+    <div class="kpi"><div class="n">6 / 12 pass</div><div class="l">Fully compliant — ternary-bonsai, RIDGE, Q4XS, Q3S, Q2, Q3XL</div></div>
+    <div class="kpi"><div class="n">5 / 12 pass</div><div class="l">Fully compliant — RIDGE, Q4XS, Q3S, Q2, Q3XL</div></div>
+    <div class="kpi"><div class="n">9.5</div><div class="l">Reference RIDGE · new ternary-bonsai 7.4 (soft-lock after first life) · smallest 244 (gpt-20) · largest 465 (tiel)</div></div>
   </div>
 
   <h2 id="ranking">TL;DR — Ranking</h2>
@@ -102,13 +103,14 @@
     <tr><td><strong>4</strong></td><td><strong>qwen3-8-Q2</strong></td><td><strong>9.2</strong></td><td><span class="badge pass">✓ pass</span></td><td><a href="models/qwen3-8-Q2/index.html">models/qwen3-8-Q2/index.html</a></td><td>278</td></tr>
     <tr><td><strong>5</strong></td><td><strong>qwen3-8-Q3XL</strong></td><td><strong>9.1</strong></td><td><span class="badge pass">✓ pass</span></td><td><a href="models/qwen3-8-Q3XL/index.html">models/qwen3-8-Q3XL/index.html</a></td><td>342</td></tr>
     <tr><td>6</td><td>tiel-coder-35b-IQ3_XXS</td><td>7.5</td><td><span class="badge partial">⚠ partial</span></td><td><a href="models/tiel-coder-35b-IQ3_XXS/index.html">models/tiel-coder-35b-IQ3_XXS/index.html</a></td><td>465</td></tr>
-    <tr><td>7</td><td>gemma4-26A4B</td><td>7.0</td><td><span class="badge partial">⚠ partial</span></td><td><a href="models/gemma4-26A4B/index.html">models/gemma4-26A4B/index.html</a></td><td>337</td></tr>
-    <tr><td>8</td><td>ornith-1-5-9b</td><td>6.5</td><td><span class="badge fail">✕ fail</span></td><td><a href="models/ornith-1-5-9b/index.html">models/ornith-1-5-9b/index.html</a></td><td>442</td></tr>
-    <tr><td>9</td><td>qwen3-5-9b-Q8</td><td>4.0</td><td><span class="badge fail">✕ fail</span></td><td><a href="models/qwen3-5-9b-Q8/index.html">models/qwen3-5-9b-Q8/index.html</a></td><td>385</td></tr>
-    <tr><td>10</td><td>gemma4-E4B</td><td>3.5</td><td><span class="badge fail">✕ fail</span></td><td><a href="models/gemma4-E4B/index.html">models/gemma4-E4B/index.html</a></td><td>426</td></tr>
-    <tr><td>11</td><td>gpt-20-Q8</td><td>2.5</td><td><span class="badge fail">✕ fail</span></td><td><a href="models/gpt-20-Q8/index.html">models/gpt-20-Q8/index.html</a></td><td>244</td></tr>
+    <tr><td>7</td><td>ternary-bonsai-2-27b-PQ2_0</td><td>7.4</td><td><span class="badge partial">⚠ partial</span></td><td><a href="models/ternary-bonsai-2-27b-PQ2_0/index.html">models/ternary-bonsai-2-27b-PQ2_0/index.html</a></td><td>394</td></tr>
+    <tr><td>8</td><td>gemma4-26A4B</td><td>7.0</td><td><span class="badge partial">⚠ partial</span></td><td><a href="models/gemma4-26A4B/index.html">models/gemma4-26A4B/index.html</a></td><td>337</td></tr>
+    <tr><td>9</td><td>ornith-1-5-9b</td><td>6.5</td><td><span class="badge fail">✕ fail</span></td><td><a href="models/ornith-1-5-9b/index.html">models/ornith-1-5-9b/index.html</a></td><td>442</td></tr>
+    <tr><td>10</td><td>qwen3-5-9b-Q8</td><td>4.0</td><td><span class="badge fail">✕ fail</span></td><td><a href="models/qwen3-5-9b-Q8/index.html">models/qwen3-5-9b-Q8/index.html</a></td><td>385</td></tr>
+    <tr><td>11</td><td>gemma4-E4B</td><td>3.5</td><td><span class="badge fail">✕ fail</span></td><td><a href="models/gemma4-E4B/index.html">models/gemma4-E4B/index.html</a></td><td>426</td></tr>
+    <tr><td>12</td><td>gpt-20-Q8</td><td>2.5</td><td><span class="badge fail">✕ fail</span></td><td><a href="models/gpt-20-Q8/index.html">models/gpt-20-Q8/index.html</a></td><td>244</td></tr>
   </table>
-  <div class="callout"><strong>Takeaway:</strong> <code>ornith</code> would be #1 with one fix. Use <code>qwen3-8-RIDGE</code> as reference — new <code>Q4XS</code> (9.4) is the closest challenger, <code>Q3S/Q2/Q3XL</code> remain drop-ins.</div>
+  <div class="callout"><strong>Takeaway:</strong> <code>qwen3-8-RIDGE</code> stays #1 and is the reference. New entry <code>ternary-bonsai-2-27b-PQ2_0</code> (7.4) has the best raw code (rAF clamp + fine sub-stepping) but <strong>soft-locks after the first life is lost</strong> — the ball resets on the paddle while the phase stays <code>PLAYING</code>, and Space only toggles pause, so <code>launch()</code> is unreachable (runtime-verified). <code>ornith</code> would still jump the board with one fix.</div>
 
   <h2 id="tested">How This Was Tested</h2>
   <p><strong>Static analysis only</strong> — <code>grep</code> + <code>read</code>, no headless browser.</p>
@@ -124,7 +126,7 @@
     <tr><td>Win/lose + screens</td><td><code>every(!alive)</code> + <code>click</code></td></tr>
     <tr><td>HUD</td><td><code>Score / Lives</code> + <code>+=10</code></td></tr>
   </table>
-  <div class="callout">Runtime check not done: open <code>file://</code> in Chrome, press <code>Space</code>/<code>←</code>, assert <code>y&gt;H</code> loses a life and 40 bricks → victory.</div>
+  <div class="callout">Runtime check not done: full playthrough to victory across all models. For <code>ternary-bonsai-2-27b-PQ2_0</code> a targeted headless-Chromium probe ran (static review looked clean): confirmed the ball rests on the paddle after a life is lost (<code>y=552</code>) and three Space presses leave it there (<code>552 → 552</code>) — the soft-lock below.</div>
 
   <h2 id="rubric">Scoring Rubric</h2>
   <p><code>10</code> = perfect. <code>−2</code> unplayable · <code>−1.5</code> broken <code>dt</code> · <code>−1</code> missing pause/wait/physics · <code>−0.5</code> visual.</p>
@@ -137,21 +139,21 @@
     <span><span class="badge fail">✕ fail</span> breaks spec</span>
     <span style="font-size:11px;color:var(--muted)">➖ clamp = dt capped only &nbsp;·&nbsp; ✅ sub = sub-stepped (no tunneling)</span>
   </div>
-  <p class="muted" style="font-size:11px;margin-bottom:0">Columns: <code>RIDGE</code>=qwen3-8-RIDGE · <code>Q4XS</code>=qwen3-8-Q4XS · <code>Q3S</code>=qwen3-8-Q3S · <code>Q2</code>=qwen3-8-Q2 · <code>Q3XL</code>=qwen3-8-Q3XL · <code>tiel</code>=tiel-coder-35b · <code>g26A</code>=gemma4-26A4B · <code>ornith</code>=ornith-1.5-9b · <code>Q5-9b</code>=qwen3-5-9b-Q8 · <code>gE4B</code>=gemma4-E4B · <code>gpt20</code>=gpt-20-Q8</p>
+  <p class="muted" style="font-size:11px;margin-bottom:0">Columns: <code>TB2</code>=ternary-bonsai-2-27b-PQ2_0 · <code>RIDGE</code>=qwen3-8-RIDGE · <code>Q4XS</code>=qwen3-8-Q4XS · <code>Q3S</code>=qwen3-8-Q3S · <code>Q2</code>=qwen3-8-Q2 · <code>Q3XL</code>=qwen3-8-Q3XL · <code>tiel</code>=tiel-coder-35b · <code>g26A</code>=gemma4-26A4B · <code>ornith</code>=ornith-1.5-9b · <code>Q5-9b</code>=qwen3-5-9b-Q8 · <code>gE4B</code>=gemma4-E4B · <code>gpt20</code>=gpt-20-Q8</p>
   <table>
-    <tr><th>Criterion (from prompt)</th><th>RIDGE</th><th>Q4XS</th><th>Q3S</th><th>Q2</th><th>Q3XL</th><th>tiel</th><th>g26A</th><th>ornith</th><th>Q5-9b</th><th>gE4B</th><th>gpt20</th></tr>
-    <tr><td>800×600 canvas</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
-    <tr><td>8×5 bricks</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>⚠<span style="font-size:10px;color:var(--partial)"> *</span></td><td>✓</td><td>✓</td><td>⚠<span style="font-size:10px;color:var(--partial)"> †</span></td><td>✓</td></tr>
-    <tr><td>Row colors (5)</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
-    <tr><td>←→ / A-D</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✕</td><td>✓</td><td>✓</td></tr>
-    <tr><td>Space: launch + pause</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✕</td><td>⚠<span style="font-size:10px;color:var(--partial)"> ‡</span></td><td>✓</td><td>✕</td><td>✕</td><td>✕</td></tr>
-    <tr><td>Paddle angle (±60°)</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✕</td><td>✓</td></tr>
-    <tr><td>3 lives + wait</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✕<span style="font-size:10px;color:var(--fail)"> §</span></td><td>✕</td><td>✕</td><td>✕</td></tr>
-    <tr><td>Win / lose</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✕<span style="font-size:10px;color:var(--fail)"> §</span></td><td>✓</td><td>✓</td><td>✕</td></tr>
-    <tr><td>4 screens + restart</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>⚠</td><td>✓</td><td>⚠</td><td>⚠</td><td>✓</td></tr>
-    <tr><td>HUD: 10 pts + lives</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✕<span style="font-size:10px;color:var(--fail)"> ¶</span></td><td>✓</td><td>✓</td><td>✓</td></tr>
-    <tr><td>rAF + deltaTime</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✕</td><td>✕</td><td>⚠</td></tr>
-    <tr><td>Anti-tunneling <span title="Prevents fast ball from passing through bricks between frames" style="cursor:help;border-bottom:1px dotted var(--muted)">ⓘ</span></td><td>✅ sub</td><td>✅ sub</td><td>✅ sub</td><td>➖ clamp</td><td>➖</td><td>➖</td><td>➖</td><td>➖</td><td>✕</td><td>✕</td><td>✕</td></tr>
+    <tr><th>Criterion (from prompt)</th><th>TB2</th><th>RIDGE</th><th>Q4XS</th><th>Q3S</th><th>Q2</th><th>Q3XL</th><th>tiel</th><th>g26A</th><th>ornith</th><th>Q5-9b</th><th>gE4B</th><th>gpt20</th></tr>
+    <tr><td>800×600 canvas</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
+    <tr><td>8×5 bricks</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>⚠<span style="font-size:10px;color:var(--partial)"> *</span></td><td>✓</td><td>✓</td><td>⚠<span style="font-size:10px;color:var(--partial)"> †</span></td><td>✓</td></tr>
+    <tr><td>Row colors (5)</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
+    <tr><td>←→ / A-D</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✕</td><td>✓</td><td>✓</td></tr>
+    <tr><td>Space: launch + pause</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✕</td><td>⚠<span style="font-size:10px;color:var(--partial)"> ‡</span></td><td>✓</td><td>✕</td><td>✕</td><td>✕</td></tr>
+    <tr><td>Paddle angle (±60°)</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✕</td><td>✓</td></tr>
+    <tr><td>3 lives + wait</td><td>✕<span style="font-size:10px;color:var(--fail)"> ¥</span></td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✕<span style="font-size:10px;color:var(--fail)"> §</span></td><td>✕</td><td>✕</td><td>✕</td></tr>
+    <tr><td>Win / lose</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✕<span style="font-size:10px;color:var(--fail)"> §</span></td><td>✓</td><td>✓</td><td>✕</td></tr>
+    <tr><td>4 screens + restart</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>⚠</td><td>✓</td><td>⚠</td><td>⚠</td><td>✓</td></tr>
+    <tr><td>HUD: 10 pts + lives</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✕<span style="font-size:10px;color:var(--fail)"> ¶</span></td><td>✓</td><td>✓</td><td>✓</td></tr>
+    <tr><td>rAF + deltaTime</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✕</td><td>✕</td><td>⚠</td></tr>
+    <tr><td>Anti-tunneling <span title="Prevents fast ball from passing through bricks between frames" style="cursor:help;border-bottom:1px dotted var(--muted)">ⓘ</span></td><td>✅ sub</td><td>✅ sub</td><td>✅ sub</td><td>✅ sub</td><td>➖ clamp</td><td>➖</td><td>➖</td><td>➖</td><td>➖</td><td>✕</td><td>✕</td><td>✕</td></tr>
   </table>
   <div class="callout" style="background:rgba(255,255,255,0.03)">
     <strong>What is “Anti-tunneling”?</strong> At high speed the ball can skip over a brick between frames (“tunnel”). <code>✅ sub</code> splits movement into tiny sub-steps (<code>ceil(speed*dt / (radius/2))</code>) and checks collision each step — no tunneling. <code>➖ clamp</code> only caps <code>dt</code> to <code>0.05</code> — safe at normal speed but can still tunnel if very fast. <code>✕</code> = no protection.
@@ -164,6 +166,7 @@
       <li><strong style="color:var(--partial)">‡</strong> <strong>gemma4-26A4B</strong> — Pressing Space while paused calls <code>launch()</code> instead of resuming, resetting ball direction.</li>
       <li><strong style="color:var(--fail)">§</strong> <strong>ornith-1.5-9b</strong> — <code>checkBallFell()</code> / <code>loseLife()</code> exist but are never called in <code>update()</code>, so the ball falling never costs a life — you can never lose.</li>
       <li><strong style="color:var(--fail)">¶</strong> <strong>ornith-1.5-9b</strong> — Score is <code>10 * (5 - row)</code> (10–50 per brick) instead of the spec’s flat <code>10</code> per brick.</li>
+      <li><strong style="color:var(--fail)">¥</strong> <strong>ternary-bonsai-2-27b-PQ2_0</strong> — after a life is lost, <code>resetBall()</code> sets <code>onPaddle = true</code> but the phase stays <code>PLAYING</code>; Space in <code>PLAYING</code> only toggles pause, so <code>launch()</code> is unreachable → the ball never relaunches (<strong>soft-lock after the first life</strong>). Runtime-verified: ball rests at <code>y=552</code>, three Space presses gave <code>552 → 552</code>.</li>
     </ul>
   </div>
 
@@ -172,9 +175,9 @@
   <div class="tier t1">
     <h3>Tier 1 — Fully Compliant</h3>
     <h4>1) qwen3-8-RIDGE — 9.5 · 324 lines</h4>
-    <p><strong>Why #1:</strong> Only impl with clamped rAF + sub-step tunnel fix + separate <code>ready</code> state. <code>MAX_DT 0.033</code>, <code>BRICK_MARGIN</code> with gap, 5 colors, Space exact, paddle <code>hit*π/3</code>, 5 screens + click/any-key. <strong>No bugs.</strong></p>
-    <h4>2) qwen3-8-Q4XS — 9.4 · 309 lines — NEW</h4>
-    <p>Clamp <code>0.05</code> + fine sub-step <code>(SPEED*dt)/(R/2)</code>, correct <code>BRICK_W</code> with margin/gap, 5 row colors. Paddle <code>rel*π/3</code>, overlap brick bounce, lives <code>resetBall</code> + <code>stuck</code> wait, <code>paused</code> flag. Needs two Spaces from START (stuck) — minor vs RIDGE one.</p>
+    <p><strong>Reference:</strong> clamped rAF + sub-step tunnel fix + separate <code>ready</code> state. <code>MAX_DT 0.033</code>, <code>BRICK_MARGIN</code> with gap, 5 colors, Space exact, paddle <code>hit*π/3</code>, 5 screens + click/any-key. <strong>No bugs.</strong></p>
+    <h4>2) qwen3-8-Q4XS — 9.4 · 309 lines</h4>
+    <p>Clamp <code>0.05</code> + fine sub-step <code>(SPEED*dt)/(R/2)</code>, correct <code>BRICK_W</code> with margin/gap, 5 row colors. Paddle <code>rel*π/3</code>, overlap brick bounce, lives <code>resetBall</code> + <code>stuck</code> wait, <code>paused</code> flag. Needs two Spaces from START (stuck) — minor.</p>
     <h4>3) qwen3-8-Q3S — 9.3 · 342 lines</h4>
     <p>Clamp <code>0.05</code> + sub-step, Space correct, paddle <code>rel*π/3</code>. Minor: <code>WIN</code> vs <code>victory</code>.</p>
     <h4>4) qwen3-8-Q2 — 9.2 · 278 lines</h4>
@@ -187,19 +190,21 @@
     <h3>Tier 2 — Playable</h3>
     <h4>6) tiel-coder-35b — 7.5 · 465 lines</h4>
     <p>Space never pauses during play. Otherwise solid. Largest (extra <code>mousemove</code>).</p>
-    <h4>7) gemma4-26A4B — 7.0 · 337 lines</h4>
+    <h4>7) ternary-bonsai-2-27b-PQ2_0 — 7.4 · 394 lines — NEW</h4>
+    <p><strong>Best raw code, one fatal state bug:</strong> clamped rAF + fine sub-step, correct <code>BRICK_W</code>, 5 colors, paddle <code>t*75°</code>. But after a life is lost, <code>resetBall()</code> sets <code>onPaddle=true</code> while <code>phase</code> stays <code>PLAYING</code>; Space there only toggles pause, so <code>launch()</code> is unreachable → <strong>soft-lock after the first life</strong> (runtime-verified). One-line fix: launch when <code>onPaddle</code> (or add a READY phase).</p>
+    <h4>8) gemma4-26A4B — 7.0 · 337 lines</h4>
     <p>Clamp ok, brickW overflow, <code>PAUSED→launch()</code> overwrites dir.</p>
-    <h4>8) ornith-1.5-9b — 6.5 · 442 lines</h4>
+    <h4>9) ornith-1.5-9b — 6.5 · 442 lines</h4>
     <p><strong>Best code, one-line bug:</strong> <code>checkBallFell()</code> never called → can't lose. Weighted score wrong.</p>
   </div>
 
   <div class="tier t3">
     <h3>Tier 3 — Broken</h3>
-    <h4>9) qwen3-5-9b — 4.0 · 385 lines</h4>
+    <h4>10) qwen3-5-9b — 4.0 · 385 lines</h4>
     <p>No <code>dt</code>, paddle only on <code>keydown</code>, no pause.</p>
-    <h4>10) gemma4-E4B — 3.5 · 426 lines</h4>
+    <h4>11) gemma4-E4B — 3.5 · 426 lines</h4>
     <p>Faux <code>dt</code>, inverted paddle angle, no pause, 880&gt;800 bricks.</p>
-    <h4>11) gpt-20-Q8 — 2.5 · 244 lines</h4>
+    <h4>12) gpt-20-Q8 — 2.5 · 244 lines</h4>
     <p>No clamp, dead Space code → <strong>ball never moves</strong>.</p>
   </div>
 

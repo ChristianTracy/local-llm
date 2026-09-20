@@ -2,7 +2,7 @@
   "spec": "breakout-3d/prompt.md",
   "generated": "2026-09-03",
   "method": "static code review + headless-Chromium runtime test (CDN reachable, SwiftShader WebGL, Space/arrows/C/R/M + click, screenshots)",
-  "note": "All 11 models submitted (tiel-coder-35b arrived late, after the first analysis pass — probed with the same runtime harness). 3D games load three.js from unpkg CDN, so tests ran over local http + internet.",
+  "note": "All 12 models submitted (tiel-coder-35b arrived late after the first analysis pass; ternary-bonsai-2-27b-PQ2_0 added 2026-09-18 — both probed with the same runtime harness). 3D games load three.js from unpkg CDN, so tests ran over local http + internet.",
   "runtime": {
     "browser": "Chromium headless (SwiftShader)",
     "actions": "load, wait, screenshot, Space, arrows, Space, screenshot, C/R/M; 2nd round: error stacks, click fallback, camera sanity",
@@ -12,6 +12,7 @@
       "qwen3-8-Q3S": "no errors; score 10, life lost (2 hearts), playing",
       "qwen3-8-Q2": "no errors; score 20, playing",
       "qwen3-8-Q3XL": "no errors; score 30, particle burst visible, playing",
+      "ternary-bonsai-2-27b-PQ2_0": "2026-09-18, local Chromium 149 + CDP: no errors/exceptions; renders + launches, score 120 (highest observed), C->MANUAL, M mute. Pause probe: PAUSED overlay shows, but PlayING resume never restores the zeroed ballVel -> ball stalls, score frozen 20->20 for 10s",
       "gemma4-26A4B": "no errors; score 70, ball+trail in flight, C->MANUAL works",
       "qwen3-5-9b-Q8": "PAGEERROR at load: Cannot read properties of undefined (reading 'mesh'); stuck at menu, click does not help, no 3D scene",
       "gpt-20-Q8": "per-frame PAGEERROR: diff.abs is not a function (Vector3 has no .abs); black screen, stuck at READY, never renders",
@@ -147,11 +148,37 @@
       }
     },
     {
+      "model": "ternary-bonsai-2-27b-PQ2_0",
+      "score": 8.9,
+      "verdict": "pass",
+      "file": "models/ternary-bonsai-2-27b-PQ2_0/index.html",
+      "rank": 6,
+      "runtime": "playable",
+      "checks": {
+        "runtime_renders_launches_scores": true,
+        "importmap_shims_exact": true,
+        "raf_clock_delta_clamp": true,
+        "aces_shadows": true,
+        "scene_camera": true,
+        "playfield_geometry": true,
+        "physics_gameplay": true,
+        "state_machine": true,
+        "lights_shadowcam": true,
+        "procedural_textures": true,
+        "effects": true,
+        "manual_camera": true,
+        "audio_octave": true,
+        "hud_screens": true,
+        "single_file_clean": true
+      },
+      "notes": "static + headless-Chromium (2026-09-18): renders, launches, score 120, 0 console errors, CAM MANUAL + mute OK, highest observed 3D score. Defect: Space pause sets ballVel to 0 and resume never restores it -> ball stalls (score froze at 20 for 10s after resume). Cosmetic: leaked tool-call text (</function></tool_call><tool_call><function=bash>...) appended after </html>."
+    },
+    {
       "model": "gemma4-26A4B",
       "score": 8.8,
       "verdict": "pass",
       "file": "models/gemma4-26A4B/index.html",
-      "rank": 6,
+      "rank": 7,
       "runtime": "playable",
       "checks": {
         "runtime_renders_launches_scores": true,
@@ -174,10 +201,10 @@
     },
     {
       "model": "qwen3-5-9b-Q8",
-      "score": 3.0,
+      "score": 3,
       "verdict": "fail",
       "file": "models/qwen3-5-9b-Q8/index.html",
-      "rank": 7,
+      "rank": 8,
       "runtime": "menu-only",
       "checks": {
         "runtime_renders_launches_scores": false,
@@ -203,7 +230,7 @@
       "score": 2.5,
       "verdict": "fail",
       "file": "models/gpt-20-Q8/index.html",
-      "rank": 8,
+      "rank": 9,
       "runtime": "menu-only",
       "checks": {
         "runtime_renders_launches_scores": false,
@@ -226,10 +253,10 @@
     },
     {
       "model": "ornith-1-5-9b",
-      "score": 2.0,
+      "score": 2,
       "verdict": "fail",
       "file": "models/ornith-1-5-9b/index.html",
-      "rank": 9,
+      "rank": 10,
       "runtime": "menu-only",
       "checks": {
         "runtime_renders_launches_scores": false,
@@ -255,7 +282,7 @@
       "score": 1.8,
       "verdict": "fail",
       "file": "models/tiel-coder-35b-IQ3_XXS/index.html",
-      "rank": 10,
+      "rank": 11,
       "runtime": "menu-only",
       "checks": {
         "runtime_renders_launches_scores": false,
@@ -281,7 +308,7 @@
       "score": 1.5,
       "verdict": "fail",
       "file": "models/gemma4-E4B-Q8-uncesored/index.html",
-      "rank": 11,
+      "rank": 12,
       "runtime": "nothing-renders",
       "checks": {
         "runtime_renders_launches_scores": false,

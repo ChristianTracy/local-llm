@@ -1,7 +1,7 @@
 {
   "spec": "breakout/prompt.md",
   "generated": "2026-09-02",
-  "method": "static code review (no browser execution)",
+  "method": "static code review + targeted headless-Chromium runtime probe for ternary-bonsai-2-27b-PQ2_0 (CDP; canvas fillText/arc hooks)",
   "models": [
     {
       "model": "qwen3-8-RIDGE",
@@ -130,11 +130,33 @@
       }
     },
     {
+      "model": "ternary-bonsai-2-27b-PQ2_0",
+      "score": 7.4,
+      "verdict": "partial",
+      "file": "models/ternary-bonsai-2-27b-PQ2_0/index.html",
+      "rank": 7,
+      "checks": {
+        "canvas_800x600": true,
+        "bricks_8x5": true,
+        "row_colors": true,
+        "controls_AD": true,
+        "space_launch_pause": true,
+        "paddle_angle": true,
+        "lives_3_wait": false,
+        "win_lose": true,
+        "screens_restart": true,
+        "hud_10": true,
+        "raf_dt": true,
+        "anti_tunnel": true
+      },
+      "notes": "Soft-lock after first life lost: resetBall() sets onPaddle=true while phase stays PLAYING, but Space in PLAYING only toggles PAUSED (launch() is unreachable) -> ball never relaunches (verified headless: ball rests at y=552, Space y 552->552). Anti-tunneling + all other checks fine; paddle angle max 75° vs spec 60°."
+    },
+    {
       "model": "gemma4-26A4B",
-      "score": 7.0,
+      "score": 7,
       "verdict": "partial",
       "file": "models/gemma4-26A4B/index.html",
-      "rank": 7,
+      "rank": 8,
       "checks": {
         "canvas_800x600": true,
         "bricks_8x5": false,
@@ -155,7 +177,7 @@
       "score": 6.5,
       "verdict": "fail",
       "file": "models/ornith-1-5-9b/index.html",
-      "rank": 8,
+      "rank": 9,
       "checks": {
         "canvas_800x600": true,
         "bricks_8x5": true,
@@ -174,10 +196,10 @@
     },
     {
       "model": "qwen3-5-9b-Q8",
-      "score": 4.0,
+      "score": 4,
       "verdict": "fail",
       "file": "models/qwen3-5-9b-Q8/index.html",
-      "rank": 9,
+      "rank": 10,
       "checks": {
         "canvas_800x600": true,
         "bricks_8x5": true,
@@ -198,7 +220,7 @@
       "score": 3.5,
       "verdict": "fail",
       "file": "models/gemma4-E4B/index.html",
-      "rank": 10,
+      "rank": 11,
       "checks": {
         "canvas_800x600": true,
         "bricks_8x5": false,
@@ -219,7 +241,7 @@
       "score": 2.5,
       "verdict": "fail",
       "file": "models/gpt-20-Q8/index.html",
-      "rank": 11,
+      "rank": 12,
       "checks": {
         "canvas_800x600": true,
         "bricks_8x5": true,

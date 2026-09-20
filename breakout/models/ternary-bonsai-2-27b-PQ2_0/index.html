@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Breakout</title>
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: #070712;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+  }
+  #game {
+    display: block;
+    border: 2px solid #3a3a55;
+    box-shadow: 0 0 40px rgba(90, 120, 255, 0.25);
+  }
+</style>
+</head>
+<body>
+<canvas id="game" width="800" height="600"></canvas>
+<script>
+(() => {
+  "use strict";
+
+  const W = 800, H = 600;
+  const canvas = document.getElementById("game");
+  const ctx = canvas.getContext("2d");
+
+  // Brick layout: 8 columns x 5 rows, each row a different color.
+  const ROW_COLORS = ["#ff4d4d", "#ffa502", "#50e3c2", "#4facfe", "#c084fc"];
+  const COLS = 8, ROWS = 5;
+  const GAP = 6;
+  const BRICK_W = (W - GAP * (COLS + 1)) / COLS;
+  const BRICK_H = 22;
+  const BRICK_TOP = 70;
+
+  // Paddle
+  const PADDLE_W = 100;
+  const PADDLE_H = 12;
+  const PADDLE_Y = H - 40;
+  const PADDLE_SPEED = 380;
+
+  // Ball
+  const BALL_R = 8;
+  const BALL_SPEED = 430;
+  const MAX_BOUNCE = (75 / 90) * (Math.PI / 2); // max launch angle from vertical
+
+  const PHASE = { START: 0, PLAYING: 1, PAUSED: 2, GAMEOVER: 3, VICTORY: 4 };
+
+  const game = {
+    phase: PHASE.START,
+    score: 0,
+    lives: 3,
+    paddleX: W / 2 - PADDLE_W / 2,
+    ballX: W / 2,
+    ballY: PADDLE_Y - BALL_R,
+    vx: 0,
+    vy: 0,
+    onPaddle: true,
+    bricks: [],
+    keys: new Set()
+  };
+
+  function buildBricks() {
+    game.bricks = [];
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        game.bricks.push({
+          x: GAP + c * (BRICK_W + GAP),
+          y: BRICK_TOP + r * (BRICK_H + GAP),
+          w: BRICK_W,
+          h: BRICK_H,
+          color: ROW_COLORS[r],
+          alive: true
+        });
+      }
+    }
+  }
+
+  function fullReset() {
+    game.score = 0;
+    game.lives = 3;
+    game.phase = PHASE.START;
+    game.vx = 0;
+    game.vy = 0;
+    game.onPaddle = true;
+    game.paddleX = W / 2 - PADDLE_W / 2;
+    game.ballX = W / 2;
+    game.ballY = PADDLE_Y - BALL_R;
+    buildBricks();
+  }
+
+  function resetBall() {
+    game.vx = 0;
+    game.vy = 0;
+    game.onPaddle = true;
+  }
+
+  function launch() {
+    const a = (Math.random() * 0.5 - 0.25) * Math.PI / 2;
+    game.vx = Math.sin(a) * BALL_SPEED;
+    game.vy = -Math.cos(a) * BALL_SPEED;
+    game.onPaddle = false;
+  }
+
+  function allBricksGone() {
+    return game.bricks.every(b => !b.alive);
+  }
+
+  function step(dt) {
+    // Paddle movement (arrow keys or A/D)
+    let dir = 0;
+    if (game.keys.has("left")) dir--;
+    if (game.keys.has("right")) dir++;
+    game.paddleX += dir * PADDLE_SPEED * dt;
+    game.paddleX = Math.max(4, Math.min(W - 4 - PADDLE_W, game.paddleX));
+
+    // Ball resting on the paddle rides with it
+    if (game.onPaddle) {
+      game.ballX = game.paddleX + PADDLE_W / 2;
+      game.ballY = PADDLE_Y - BALL_R;
+      return;
+    }
+
+    let x = game.ballX;
+    let y = game.ballY;
+    let vx = game.vx;
+    let vy = game.vy;
+
+    // Sub-step movement (max ~5 px per substep) so the ball can never
+    // tunnel through the paddle or bricks, even with big dt values.
+    const dist = Math.hypot(vx, vy) * dt;
+    const steps = Math.max(1, Math.ceil(dist / 5));
+    const sdt = dt / steps;
+    let fell = false;
+
+    for (let i = 0; i < steps; i++) {
+      x += vx * sdt;
+      y += vy * sdt;
+
+      // Walls (top, left, right)
+      if (x < BALL_R) {
+        x = BALL_R;
+        vx = Math.abs(vx);
+      } else if (x > W - BALL_R) {
+        x = W - BALL_R;
+        vx = -Math.abs(vx);
+      } else if (y < BALL_R) {
+        y = BALL_R;
+        vy = Math.abs(vy);
+      }
+
+      // Paddle: only when the ball is falling and overlapping the paddle top
+      const pcx = game.paddleX + PADDLE_W / 2;
+      if (vy > 0 &&
+          y + BALL_R >= PADDLE_Y &&
+          y + BALL_R <= PADDLE_Y + PADDLE_H + 6 &&
+          x > game.paddleX - BALL_R &&
+          x < game.paddleX + PADDLE_W + BALL_R) {
+        // Impact point determines the launch angle:
+        // left edge -> t = -1 -> ball goes left; right edge -> t = +1 -> right.
+        const t = Math.max(-1, Math.min(1, (x - pcx) / (PADDLE_W / 2)));
+        const angle = t * MAX_BOUNCE;
+        x = pcx;
+        y = PADDLE_Y - BALL_R;
+        vx = Math.sin(angle) * BALL_SPEED;
+        vy = -Math.cos(angle) * BALL_SPEED;
+        continue;
+      }
+
+      // Bricks
+      for (const b of game.bricks) {
+        if (!b.alive) continue;
+        if (x + BALL_R > b.x && x - BALL_R < b.x + b.w &&
+            y + BALL_R > b.y && y - BALL_R < b.y + b.h) {
+          // Resolve along the axis of least penetration, then flip velocity.
+          const ox = Math.min(x + BALL_R, b.x + b.w) - Math.max(x - BALL_R, b.x);
+          const oy = Math.min(y + BALL_R, b.y + b.h) - Math.max(y - BALL_R, b.y);
+          const left = x < b.x + b.w / 2;
+          const top = y < b.y + b.h / 2;
+          if (ox <= oy) {
+            x = left ? b.x - BALL_R : b.x + b.w + BALL_R;
+            vx = left ? -Math.abs(vx) : Math.abs(vx);
+            if (vx === 0) vx = left ? -1 : 1;
+          } else {
+            y = top ? b.y - BALL_R : b.y + b.h + BALL_R;
+            vy = top ? -Math.abs(vy) : Math.abs(vy);
+            if (vy === 0) vy = top ? -1 : 1;
+          }
+          b.alive = false;
+          game.score += 10;
+          break;
+        }
+      }
+
+      if (y - BALL_R > H) {
+        fell = true;
+        break;
+      }
+    }
+
+    if (fell) {
+      game.lives--;
+      if (game.lives <= 0) {
+        game.phase = PHASE.GAMEOVER;
+      } else {
+        resetBall();
+      }
+    } else {
+      game.ballX = x;
+      game.ballY = y;
+      game.vx = vx;
+      game.vy = vy;
+      if (allBricksGone()) game.phase = PHASE.VICTORY;
+    }
+  }
+
+  // Heart shape for the lives HUD. (cx, cy) is the top-center of the heart.
+  function drawHeart(cx, cy, s) {
+    ctx.beginPath();
+    ctx.moveTo(cx, cy + 0.42 * s);
+    ctx.bezierCurveTo(
+      cx, cy - 0.15 * s, cx - 0.9 * s, cy - 0.42 * s, cx - 0.9 * s, cy + 0.38 * s);
+    ctx.bezierCurveTo(
+      cx - 0.9 * s, cy + 0.85 * s, cx - 0.4 * s, cy + 1.05 * s, cx, cy + 1.05 * s);
+    ctx.bezierCurveTo(
+      cx + 0.4 * s, cy + 1.05 * s, cx + 0.9 * s, cy + 0.85 * s, cx + 0.9 * s, cy + 0.38 * s);
+    ctx.bezierCurveTo(
+      cx + 0.9 * s, cy - 0.42 * s, cx + 0.9 * s, cy - 0.15 * s, cx, cy + 0.42 * s);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  function draw() {
+    // Background
+    const g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, "#0d0d1e");
+    g.addColorStop(1, "#12122a");
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+
+    // Bricks
+    for (const b of game.bricks) {
+      if (!b.alive) continue;
+      ctx.fillStyle = b.color;
+      ctx.fillRect(b.x, b.y, b.w, b.h);
+      ctx.fillStyle = "rgba(255,255,255,0.25)";
+      ctx.fillRect(b.x, b.y, b.w, 4);
+      ctx.fillStyle = "rgba(0,0,0,0.3)";
+      ctx.fillRect(b.x, b.y + b.h - 4, b.w, 4);
+    }
+
+    // Paddle
+    ctx.save();
+    ctx.shadowColor = "#648cff";
+    ctx.shadowBlur = 12;
+    ctx.fillStyle = "#82aaff";
+    ctx.beginPath();
+    ctx.roundRect(game.paddleX, PADDLE_Y, PADDLE_W, PADDLE_H, 6);
+    ctx.fill();
+    ctx.restore();
+
+    // Ball
+    if (game.phase === PHASE.START || game.phase === PHASE.PLAYING ||
+        game.phase === PHASE.PAUSED) {
+      ctx.save();
+      ctx.shadowColor = "#ffffff";
+      ctx.shadowBlur = 10;
+      ctx.fillStyle = "#ffffff";
+      ctx.beginPath();
+      ctx.arc(game.ballX, game.ballY, BALL_R, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // HUD
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "18px 'Courier New', monospace";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "top";
+    ctx.fillText("Score: " + game.score, 16, 12);
+
+    ctx.fillStyle = "#ff4d4d";
+    for (let i = 0; i < game.lives; i++) {
+      drawHeart(W - 28 - i * 34, 8, 13);
+    }
+
+    // Overlays
+    const overlay = (title, lines) => {
+      ctx.fillStyle = "rgba(5,5,15,0.78)";
+      ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = "#ffffff";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.font = "44px 'Courier New', monospace";
+      ctx.fillText(title, W / 2, H / 2 - 40);
+      ctx.font = "18px 'Courier New', monospace";
+      let y = H / 2 + 10;
+      for (const line of lines) {
+        ctx.fillText(line, W / 2, y);
+        y += 28;
+      }
+    };
+
+    if (game.phase === PHASE.START) {
+      overlay("BREAKOUT", [
+        "Press SPACE to launch the ball",
+        "Left/Right arrows or A/D to move the paddle",
+        "Destroy all bricks to win. You have 3 lives."
+      ]);
+    } else if (game.phase === PHASE.PAUSED) {
+      overlay("PAUSED", ["Press SPACE to resume"]);
+    } else if (game.phase === PHASE.GAMEOVER) {
+      overlay("GAME OVER", [
+        "Final score: " + game.score,
+        "Press SPACE or click to restart"
+      ]);
+    } else if (game.phase === PHASE.VICTORY) {
+      overlay("VICTORY!", [
+        "Final score: " + game.score,
+        "Press SPACE or click to restart"
+      ]);
+    }
+  }
+
+  function launchOrRestart() {
+    if (game.phase === PHASE.START || game.phase === PHASE.GAMEOVER ||
+        game.phase === PHASE.VICTORY) {
+      if (game.phase === PHASE.START) {
+        launch();
+      } else {
+        fullReset();
+        launch();
+      }
+      game.phase = PHASE.PLAYING;
+    }
+  }
+
+  window.addEventListener("keydown", e => {
+    const k = e.key;
+    if (k === "ArrowLeft" || k === "a" || k === "A") {
+      e.preventDefault();
+      game.keys.add("left");
+    } else if (k === "ArrowRight" || k === "d" || k === "D") {
+      e.preventDefault();
+      game.keys.add("right");
+    } else if (k === " " || k === "Enter") {
+      e.preventDefault();
+      if (game.phase === PHASE.PLAYING) {
+        game.phase = PHASE.PAUSED;
+      } else if (game.phase === PHASE.PAUSED) {
+        game.phase = PHASE.PLAYING;
+      } else {
+        launchOrRestart();
+      }
+    }
+  });
+
+  window.addEventListener("keyup", e => {
+    const k = e.key;
+    if (k === "ArrowLeft" || k === "a" || k === "A") game.keys.delete("left");
+    if (k === "ArrowRight" || k === "d" || k === "D") game.keys.delete("right");
+  });
+
+  canvas.addEventListener("click", () => {
+    if (game.phase === PHASE.START) {
+      launch();
+      game.phase = PHASE.PLAYING;
+    } else if (game.phase === PHASE.GAMEOVER || game.phase === PHASE.VICTORY) {
+      fullReset();
+      launch();
+      game.phase = PHASE.PLAYING;
+    }
+  });
+
+  let last = null;
+  function loop(ts) {
+    requestAnimationFrame(loop);
+    const dt = last === null ? 1 / 60 : Math.min((ts - last) / 1000, 0.05);
+    last = ts;
+    if (game.phase === PHASE.PLAYING) step(dt);
+    draw();
+  }
+
+  fullReset();
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

@@ -1,6 +1,6 @@
 # Breakout 3D — Model Comparison Report
 
-**Spec:** `prompt.md` · **Date:** 2026-09-03 · **Models:** 11 (all submitted; tiel arrived late and got the same harness) · **Method:** Static code review **+ headless-Chromium runtime test**
+**Spec:** `prompt.md` · **Date:** 2026-09-03 (ternary-bonsai + runtime re-test 2026-09-18) · **Models:** 12 · **Method:** Static code review **+ headless-Chromium runtime test**
 
 > Single-file 3D Breakout (Three.js 0.160.0 via importmap + `requestAnimationFrame` + `Clock.getDelta()` clamped to `0.05`). Unlike the 2D edition, these games need **internet access** (three.js loads from `unpkg.com` CDN).
 
@@ -26,14 +26,15 @@
 | **3** | **qwen3-8-Q3S** | **9.4** | ✅ Pass | score 10, life lost, 0 errors | 1056 |
 | **4** | **qwen3-8-Q2** | **9.2** | ✅ Pass | score 20, 0 errors | 888 |
 | **5** | **qwen3-8-Q3XL** | **9.1** | ✅ Pass | score 30, burst particles, 0 errors | 975 |
-| **6** | **gemma4-26A4B** | **8.8** | ✅ Pass | score 70, ball+trail flying, CAM MANUAL, 0 errors | 696 |
-| 7 | qwen3-5-9b-Q8 | 3.0 | ❌ Fail | `reading 'mesh'` at load; menu-only, click doesn't start | 1163 |
-| 8 | gpt-20-Q8 | 2.5 | ❌ Fail | `diff.abs is not a function` every frame; black screen | 657 |
-| 9 | ornith-1-5-9b | 2.0 | ❌ Fail | `THREE.RoundedBoxGeometry is not a constructor`; black screen | 902 |
-| 10 | tiel-coder-35b-IQ3_XXS | 1.8 | ❌ Fail | `THREE is not defined` (addon imported, THREE itself not); no canvas | 963 |
-| 11 | gemma4-E4B-Q8-uncesored | 1.5 | ❌ Fail | `THREE is not defined`; no `<canvas>` at all | 1506 |
+| **6** | **ternary-bonsai-2-27b-PQ2_0** | **8.9** | ✅ Pass | score 120, CAM MANUAL, mute, 0 errors — **pause/resume stalls the ball** | 1113 |
+| **7** | **gemma4-26A4B** | **8.8** | ✅ Pass | score 70, ball+trail flying, CAM MANUAL, 0 errors | 696 |
+| 8 | qwen3-5-9b-Q8 | 3.0 | ❌ Fail | `reading 'mesh'` at load; menu-only, click doesn't start | 1163 |
+| 9 | gpt-20-Q8 | 2.5 | ❌ Fail | `diff.abs is not a function` every frame; black screen | 657 |
+| 10 | ornith-1-5-9b | 2.0 | ❌ Fail | `THREE.RoundedBoxGeometry is not a constructor`; black screen | 902 |
+| 11 | tiel-coder-35b-IQ3_XXS | 1.8 | ❌ Fail | `THREE is not defined` (addon imported, THREE itself not); no canvas | 963 |
+| 12 | gemma4-E4B-Q8-uncesored | 1.5 | ❌ Fail | `THREE is not defined`; no `<canvas>` at all | 1506 |
 
-> **Takeaway:** Static review lied — the prettiest code (`ornith`, `E4B`) doesn't run. **Use `qwen3-8-RIDGE` as reference** (verified: launch, scoring, life loss, manual camera, mute, zero errors). `gemma4-26A4B` is the comeback story: statically the weakest (7.0), at runtime a rock-solid 8.8 with the highest test score (70). Late arrival `tiel` mirrors `ornith`'s bug in reverse (imports the addon, forgets `THREE` itself). Every failure is a **one-line-class bug** (missing import / wrong API call) — see footnotes. Open the `index.html` gallery to play the 6 working builds (needs internet for the three.js CDN).
+> **Takeaway:** Static review lied — the prettiest code (`ornith`, `E4B`) doesn't run. **Use `qwen3-8-RIDGE` as reference** (verified: launch, scoring, life loss, manual camera, mute, zero errors). New entry `ternary-bonsai-2-27b-PQ2_0` is the most feature-complete build yet and posted the **highest runtime score (120)** with 0 console errors — but Space→pause zeroes the ball velocity and resuming never restores it, so the ball stalls (verified: score frozen for 10 s after unpause). Every failure below is a **one-line-class bug** (missing import / wrong API call) — see footnotes. Open the `index.html` gallery to play the 7 working builds (needs internet for the three.js CDN).
 
 ---
 
@@ -51,6 +52,7 @@ Runtime setup: local `http.server` + headless Chromium (SwiftShader WebGL) via P
 | Q2 | **score 20**, 0 errors |
 | Q3XL | **score 30**, green burst particles mid-flight, 0 errors |
 | gemma26A | **score 70**, ball + trail in flight, `CAM: MANUAL`, 0 errors |
+| ternary-bonsai-2-27b-PQ2_0 | **score 120** (highest observed), `CAM: MANUAL`, `M` mute, 0 console errors/exceptions. **Pause probe:** `PLAYING`→`PAUSED`→`PLAYING` works but the ball velocity is left at 0 — score froze at 20 for 10 s after resume (ball stalls). Also leaks `</function></tool_call><tool_call><function=bash>…` text after `</html>`. |
 | qwen3-5 | `Cannot read properties of undefined (reading 'mesh')` at load; frozen `Press Space to Start` menu; click also fails; no 3D scene |
 | gpt-20 | `diff.abs is not a function` ×29 (per frame); overlay reaches READY then loop dies before `render` → black |
 | ornith | `THREE.RoundedBoxGeometry is not a constructor` at init (paddle creation); black screen, menu only |
@@ -59,7 +61,7 @@ Runtime setup: local `http.server` + headless Chromium (SwiftShader WebGL) via P
 
 Static checks (same as before, now secondary): exact shims+importmap, `Math.min(clock.getDelta(), 0.05)`, ACES + PCFSoft, fog/camera constants, playfield/physics constants, 6-state machine, light rig, canvas-texture sizes, effects, manual-cam clamps, octave audio, HUD.
 
-> **Runtime check not done:** full playthrough to victory/game-over + restart (too slow to bot-play); life loss was observed live (RIDGE, Q3S), which exercises the same path.
+> **Runtime check not done:** full playthrough to victory/game-over + restart (too slow to bot-play); life loss was observed live (RIDGE, Q3S), which exercises the same path. The ternary pause/resume stall was confirmed with a dedicated Space-space probe (score sampled every second).
 
 ---
 
@@ -71,7 +73,7 @@ Static checks (same as before, now secondary): exact shims+importmap, `Math.min(
 - **−1** per missing polish group in a *working* build (octave audio / victory jingle / frozen particles / border frame / manual-cam jump)
 - **−0.5** structure/clarity nit among otherwise identical builds
 
-> Playability dominates: a working 8.8 beats a beautiful 3.0. Gallery cards show `func` (compliance), `quality` (structure/loop/fidelity), `LOC` (`wc -l`). All 11 models submitted and were runtime-tested.
+> Playability dominates: a working 8.8 beats a beautiful 3.0. Gallery cards show `func` (compliance), `quality` (structure/loop/fidelity), `LOC` (`wc -l`). All 12 models submitted and were runtime-tested (ternary-bonsai on 2026-09-18).
 
 ---
 
@@ -79,22 +81,22 @@ Static checks (same as before, now secondary): exact shims+importmap, `Math.min(
 
 **Legend:** `✅` Pass — meets spec / works · `❌` Fail — broken at runtime · `⚠️` Partial — deviation but playable
 
-*Columns:* `RIDGE`=qwen3-8-RIDGE · `Q4XS`=Q4XS · `Q3S`=Q3S · `Q2`=Q2 · `Q3XL`=Q3XL · `26A`=gemma4-26A4B · `Q5`=qwen3-5-9b-Q8 · `gpt`=gpt-20-Q8 · `orn`=ornith-1.5-9b · `E4B`=gemma4-E4B-uncesored · `tiel`=tiel-coder-35b
+*Columns:* `TB2`=ternary-bonsai-2-27b-PQ2_0 · `RIDGE`=qwen3-8-RIDGE · `Q4XS`=Q4XS · `Q3S`=Q3S · `Q2`=Q2 · `Q3XL`=Q3XL · `26A`=gemma4-26A4B · `Q5`=qwen3-5-9b-Q8 · `gpt`=gpt-20-Q8 · `orn`=ornith-1.5-9b · `E4B`=gemma4-E4B-uncesored · `tiel`=tiel-coder-35b
 
-| Criterion | RIDGE | Q4XS | Q3S | Q2 | Q3XL | 26A | Q5 | gpt | orn | E4B | tiel |
-|-----------|-------|------|-----|----|------|-----|----|-----|-----|-----|------|
-| ▶ **Runtime: renders + launches + scores, 0 errors** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌§ | ❌¶ | ❌‖ | ❌⋆ | ❌†† |
-| importmap + shims exact | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌* | ✅ |
-| rAF + `getDelta()` clamp 0.05 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | —† | —† | —† | ❌‡ | —† |
-| ACES + PCFSoft shadows | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | —† | —† | —† | ❌ | —† |
-| Playfield + physics (static) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | —† | ⚠️# | ✅ | ✅ | —† |
-| 6 states + reset (static) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | —† | —† | —† | ✅ | —† |
-| Lights + textures + starfield | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | —† | —† | —† | ✅ | —† |
-| Effects (death/pulse/trail/burst/shake) | ✅ | ✅ | ✅ | ✅ | ✅ | ⚠️° | —† | —† | —† | ✅ | —† |
-| Manual cam (takeover/clamps/R) | ✅ | ✅ | ✅ | ✅ | ✅ | ⚠️# | —† | —† | —† | ✅ | —† |
-| Audio octave + jingles + mute | ✅ | ✅ | ✅ | ✅ | ✅ | ❌✚ | —† | —† | —† | ✅ | —† |
-| HUD + 4 screens | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ⚠️ | ✅ | ✅ | ✅ |
-| Single file, no ext libs / TODO | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Criterion | TB2 | RIDGE | Q4XS | Q3S | Q2 | Q3XL | 26A | Q5 | gpt | orn | E4B | tiel |
+|-----------|-----|-------|------|-----|----|------|-----|----|-----|-----|-----|------|
+| ▶ **Runtime: renders + launches + scores, 0 errors** | ✅€ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌§ | ❌¶ | ❌‖ | ❌⋆ | ❌†† |
+| importmap + shims exact | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌* | ✅ |
+| rAF + `getDelta()` clamp 0.05 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | —† | —† | —† | ❌‡ | —† |
+| ACES + PCFSoft shadows | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | —† | —† | —† | ❌ | —† |
+| Playfield + physics (static) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | —† | ⚠️# | ✅ | ✅ | —† |
+| 6 states + reset (static) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | —† | —† | —† | ✅ | —† |
+| Lights + textures + starfield | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | —† | —† | —† | ✅ | —† |
+| Effects (death/pulse/trail/burst/shake) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ⚠️° | —† | —† | —† | ✅ | —† |
+| Manual cam (takeover/clamps/R) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ⚠️# | —† | —† | —† | ✅ | —† |
+| Audio octave + jingles + mute | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌✚ | —† | —† | —† | ✅ | —† |
+| HUD + 4 screens | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ⚠️ | ✅ | ✅ | ✅ |
+| Single file, no ext libs / TODO | ⚠️¥ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 
 `—†` = unverifiable: init/loop dies before the feature can execute (code may look right, game never runs).
 
@@ -108,6 +110,8 @@ Static checks (same as before, now secondary): exact shims+importmap, `Math.min(
 * `°` **26A4B:** particle bursts spawn but are never updated (frozen); no `LineLoop` border.
 * `#` **26A4B:** manual camera snaps to defaults instead of taking over (jump). gpt-20's static physics row is `⚠️` independently (octave at full gain etc.) — moot, it never runs.
 * `✚` **26A4B:** single-oscillator beeps (no `freq*2` layer), no `523/659/784` victory arpeggio — yet it plays flawlessly, hence still **pass**.
+* `€` **ternary-bonsai-2-27b-PQ2_0:** `PLAYING`→`PAUSED` sets `ballVel` to `(0,0,0)` and `PAUSED`→`PLAYING` never restores it, so the anti-stall nudge leaves the ball bouncing almost vertically — runtime-verified stall (score frozen 20→20 for 10 s after resume). The rest of the runtime row is clean: score 120, `CAM: MANUAL`, `M` mute, 0 console errors. One-line fix: cache/restore the velocity vector.
+* `¥` **ternary-bonsai-2-27b-PQ2_0:** the output file has leaked assistant tool-call text (`</function></tool_call><tool_call><function=bash>…`) appended after `</html>`. Browsers ignore it, but it fails the “clean single file” bar.
 
 ---
 
@@ -117,11 +121,11 @@ Static checks (same as before, now secondary): exact shims+importmap, `Math.min(
 
 #### 1) qwen3-8-RIDGE — 9.6 · 906 lines
 
-**Why #1:** the only build verified end-to-end in one session — launch, **score 20**, life loss (♥♥·), `C` → `CAM: MANUAL`, `M` mute, zero console errors. Octave-correct `beep()`, `atan2` no-jump takeover, all textures + 260 stars, `exp()` auto-cam decay. **Reference.**
+**Reference:** the only build verified end-to-end in one session — launch, **score 20**, life loss (♥♥·), `C` → `CAM: MANUAL`, `M` mute, zero console errors. Octave-correct `beep()`, `atan2` no-jump takeover, all textures + 260 stars, `exp()` auto-cam decay.
 
 #### 2) qwen3-8-Q4XS — 9.5 · 1023 lines
 
-Highest test score (**80**, 8 bricks) with visible trail ghosts. `START→READY→PLAYING` across two Spaces is exactly what the spec demands. Zero errors.
+Highest original test score (**80**, 8 bricks) with visible trail ghosts. `START→READY→PLAYING` across two Spaces is exactly what the spec demands. Zero errors.
 
 #### 3) qwen3-8-Q3S — 9.4 · 1056 lines
 
@@ -135,29 +139,33 @@ Highest test score (**80**, 8 bricks) with visible trail ghosts. `START→READY�
 
 **Score 30** with a green particle burst caught mid-flight in the screenshot. Zero errors. Launch inline in the Space handler — structure nit only.
 
-#### 6) gemma4-26A4B — 8.8 · 696 lines — RUNTIME COMEBACK
+#### 6) ternary-bonsai-2-27b-PQ2_0 — 8.9 · 1113 lines — NEW
 
-Static review ranked it last (7.0). Runtime says otherwise: **score 70 — the highest of all**, ball + trail flying, manual camera toggling, **zero errors**. The static deductions are real (mono beeps, no victory jingle, frozen burst particles, no border, cam jump) but none stop gameplay. Playable beats pretty: **pass**.
+The most feature-complete build and the **highest runtime score (120)** with 0 console errors, `CAM: MANUAL` and mute all working; all 15 static checks pass. Demoted for one real bug: Space→pause zeroes `ballVel` and resume never restores it — runtime-verified stall (score frozen 20→20 for 10 s after unpause). Also leaks tool-call text after `</html>`. A one-line velocity cache would move it to the top.
+
+#### 7) gemma4-26A4B — 8.8 · 696 lines — RUNTIME COMEBACK
+
+Static review ranked it last (7.0). Runtime says otherwise: **score 70**, ball + trail flying, manual camera toggling, **zero errors**. The static deductions are real (mono beeps, no victory jingle, frozen burst particles, no border, cam jump) but none stop gameplay. Playable beats pretty: **pass**.
 
 ### Tier 2 — Broken at runtime (fatal JS errors, never playable — 5 builds)
 
-#### 7) qwen3-5-9b-Q8 — 3.0 · 1163 lines
+#### 8) qwen3-5-9b-Q8 — 3.0 · 1163 lines
 
 The most deceptive: polished gradient menu, complete HUD, OOP architecture — and `reading 'mesh'` at load. Neither Space nor click starts it; no 3D scene ever appears. Static 8.5 → runtime 3.0.
 
-#### 8) gpt-20-Q8 — 2.5 · 657 lines
+#### 9) gpt-20-Q8 — 2.5 · 657 lines
 
 Smallest file; init succeeds, overlay even reaches READY — then `diff.abs()` throws **every frame before render**. Black screen. One-line fix (`Math.abs` per component).
 
-#### 9) ornith-1-5-9b — 2.0 · 902 lines
+#### 10) ornith-1-5-9b — 2.0 · 902 lines
 
 Was #4 statically. Dies at paddle creation: addon never imported. Black screen + menu only. One-line fix (the import). Second one-line-bug contest in a row for this model.
 
-#### 10) tiel-coder-35b-IQ3_XXS — 1.8 · 963 lines — LATE, TESTED
+#### 11) tiel-coder-35b-IQ3_XXS — 1.8 · 963 lines — LATE, TESTED
 
 Arrived after the first pass and got the same harness: `THREE is not defined` at load — the mirror of ornith's bug (imports the addon, forgets `THREE` itself). Exact shims+importmap, polished rainbow menu, but no canvas is created and Space/click are dead. One-line fix. (Its 2D entry scored 7.5.)
 
-#### 11) gemma4-E4B-Q8-uncesored — 1.5 · 1506 lines
+#### 12) gemma4-E4B-Q8-uncesored — 1.5 · 1506 lines
 
 Largest file, least runtime: `THREE is not defined`, **no canvas element**. (Dir keeps upstream typo `uncesored`.)
 

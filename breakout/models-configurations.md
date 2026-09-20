@@ -1,6 +1,6 @@
 # Models — Router Configurations (Breakout test subset)
 
-> Source: router presets INI dump. Parsed 2026-09-02. Filtered to the 11 models tested for Breakout (`results.json:5`, `report.md:12`). Commented `;` lines removed. Each section below is the **full resolved configuration** (defaults + overrides merged).
+> Source: router presets INI dump. Parsed 2026-09-02 (ternary-bonsai added 2026-09-18). Filtered to the 12 models tested for Breakout (`results.json`, `report.md`). Commented `;` lines removed. Each section below is the **full resolved configuration** (defaults + overrides merged). `ternary-bonsai-2-27b-PQ2_0` ran on the separate PrismML llama.cpp fork mini-router (its own `[*]` defaults; `PTQ1_0` sibling untested).
 
 Links: `prompt.md` · `report.md` / `report.html` · `results.json` · `index.html` (gallery) · `models-configurations.html` · `models/*/index.html`
 
@@ -22,7 +22,7 @@ See also `report.md` / `report.html` for implications (16GB VRAM → `n-gpu-laye
 
 ---
 
-## Tested for Breakout (11) — rank order
+## Tested for Breakout (12) — rank order
 
 | Rank | Breakout dir | Router section | Score · Verdict | Hugging Face |
 |-----:|--------------|----------------|-----------------|--------------|
@@ -32,15 +32,61 @@ See also `report.md` / `report.html` for implications (16GB VRAM → `n-gpu-laye
 | 4 | `models/qwen3-8-Q2/index.html` | `[qwen3.8-27-Q2_K_XL-unsloth]` | 9.2 · pass | [Qwen3.8-27B-UD-Q2_K_XL](https://huggingface.co/unsloth/Qwen3-30B-A3B-GGUF) |
 | 5 | `models/qwen3-8-Q3XL/index.html` | `[qwen3.8-27b-Q3XL-unsloth]` | 9.1 · pass | [Qwen3.8-27B-UD-Q3_K_XL](https://huggingface.co/unsloth/Qwen3-30B-A3B-GGUF) |
 | 6 | `models/tiel-coder-35b-IQ3_XXS/index.html` | `[tiel-coder-35b-IQ3_XXS]` | 7.5 · partial | [Tiel-Coder-35B-A3B](https://huggingface.co/peculiar-ragdoll/Tiel-Coder-35B-A3B-GGUF) |
-| 7 | `models/gemma4-26A4B/index.html` | `[gemma4-26B-A4B-Q4]` | 7.0 · partial | [Gemma-4-26B-A4B-it](https://huggingface.co/unsloth/gemma-4-26B-A4B-it-qat-GGUF) |
-| 8 | `models/ornith-1-5-9b/index.html` | `[ornith-1.5-9b]` | 6.5 · fail | [Ornith-1.5-9B](https://huggingface.co/ornith-ai/Ornith-1.5-9B) |
-| 9 | `models/qwen3-5-9b-Q8/index.html` | `[qwen3.5-9b-Q8-unsloth]` | 4.0 · fail | [Qwen3.5-9B](https://huggingface.co/unsloth/Qwen3.5-9B-GGUF) |
-| 10 | `models/gemma4-E4B/index.html` | `[gemma4-E4B-Q8-uncensored]` | 3.5 · fail | [Gemma-4-E4B-Uncensored](https://huggingface.co/HauhauCS/Gemma-4-E4B-Uncensored-HauhauCS-Aggressive) |
-| 11 | `models/gpt-20-Q8/index.html` | `[gpt-20b-unsloth-Q8-UD]` | 2.5 · fail | [gpt-oss-20b](https://huggingface.co/unsloth/gpt-oss-20b-GGUF) |
+| 7 | `models/ternary-bonsai-2-27b-PQ2_0/index.html` | `[ternary-bonsai-2-27b-gguf-PQ2_0]` | 7.4 · partial | [Ternary-Bonsai-2-27B-PQ2_0](https://huggingface.co/prism-ml/Ternary-Bonsai-2-27B-gguf) |
+| 8 | `models/gemma4-26A4B/index.html` | `[gemma4-26B-A4B-Q4]` | 7.0 · partial | [Gemma-4-26B-A4B-it](https://huggingface.co/unsloth/gemma-4-26B-A4B-it-qat-GGUF) |
+| 9 | `models/ornith-1-5-9b/index.html` | `[ornith-1.5-9b]` | 6.5 · fail | [Ornith-1.5-9B](https://huggingface.co/ornith-ai/Ornith-1.5-9B) |
+| 10 | `models/qwen3-5-9b-Q8/index.html` | `[qwen3.5-9b-Q8-unsloth]` | 4.0 · fail | [Qwen3.5-9B](https://huggingface.co/unsloth/Qwen3.5-9B-GGUF) |
+| 11 | `models/gemma4-E4B/index.html` | `[gemma4-E4B-Q8-uncensored]` | 3.5 · fail | [Gemma-4-E4B-Uncensored](https://huggingface.co/HauhauCS/Gemma-4-E4B-Uncensored-HauhauCS-Aggressive) |
+| 12 | `models/gpt-20-Q8/index.html` | `[gpt-20b-unsloth-Q8-UD]` | 2.5 · fail | [gpt-oss-20b](https://huggingface.co/unsloth/gpt-oss-20b-GGUF) |
 
-> Naming: `gemma4-26A4B` on disk = `gemma4-26B-A4B-Q4` in router; `qwen3-8-Q2` = `qwen3.8-27-Q2_K_XL-unsloth` (router typo `27` vs `27b`). HF links point to the base model / GGUF repo; quantization is the local `*.gguf` file.
+> Naming: `gemma4-26A4B` on disk = `gemma4-26B-A4B-Q4` in router; `qwen3-8-Q2` = `qwen3.8-27-Q2_K_XL-unsloth` (router typo `27` vs `27b`); `ternary-bonsai-2-27b-PQ2_0` = `[ternary-bonsai-2-27b-gguf-PQ2_0]` on the separate PrismML fork router. HF links point to the base model / GGUF repo; quantization is the local `*.gguf` file.
 
-Excluded (4 INI sections not tested): `[gpt-20b-Q5-unsloth]`, `[lfm2.5-2.6b]`, `[qwen3.5-9b-heretic-neomax-Q4]`, `[qwen3.5-9b-heretic-neomax-Q8]`.
+Excluded (4 INI sections not tested): `[gpt-20b-Q5-unsloth]`, `[lfm2.5-2.6b]`, `[qwen3.5-9b-heretic-neomax-Q4]`, `[qwen3.5-9b-heretic-neomax-Q8]`. Untested sibling: `[ternary-bonsai-2-27b-gguf]` (PTQ1_0).
+
+---
+
+## 7) ternary-bonsai-2-27b-PQ2_0 — `[ternary-bonsai-2-27b-gguf-PQ2_0]` — 7.4 partial
+
+- **Breakout:** `models/ternary-bonsai-2-27b-PQ2_0/index.html` (394 lines) — rank 7 (soft-lock after first life)
+- **GGUF:** `Ternary-Bonsai-2-27B-PQ2_0.gguf` (2-bit-slot ternary pack, 7.21 GB)
+- **mmproj:** `Ternary-Bonsai-2-27B-mmproj-Q8_0.gguf` (optional vision tower)
+- **Hugging Face:** [prism-ml/Ternary-Bonsai-2-27B-gguf](https://huggingface.co/prism-ml/Ternary-Bonsai-2-27B-gguf) — base derived from **Qwen3.8-27B** (ternary hybrid-attention)
+
+> Ran on a separate **PrismML llama.cpp fork** mini-router with its own `[*]` defaults (stock llama.cpp rejects `PTQ1_0`/`PQ2_0`). The differing fork defaults are mirrored explicitly below (`ctx-size`, `jinja`, reasoning `4096`, `temp 1.0`). The `PTQ1_0` sibling was not benchmarked.
+
+Full resolved config:
+
+| Key | Value |
+|-----|-------|
+| `model` | `Ternary-Bonsai-2-27B-PQ2_0.gguf` |
+| `mmproj` | `Ternary-Bonsai-2-27B-mmproj-Q8_0.gguf` |
+| `ctx-size` | `65536` |
+| `jinja` | `true` |
+| `reasoning-effort` | `medium` |
+| `reasoning-preserve` | `true` |
+| `reasoning-budget` | `4096` |
+| `n-gpu-layers` | `99` |
+| `parallel` | `1` |
+| `flash-attn` | `on` |
+| `cache-type-k` | `q8_0` |
+| `cache-type-v` | `q8_0` |
+| `batch-size` | `2048` |
+| `ubatch-size` | `512` |
+| `temp` | `1.0` |
+| `top-p` | `0.95` |
+| `top-k` | `20` |
+| `min-p` | `0.0` |
+| `repeat-penalty` | `1.0` |
+| `presence-penalty` | `0.0` |
+
+Raw INI (filtered, tested PQ2_0 section):
+```ini
+[ternary-bonsai-2-27b-gguf-PQ2_0]
+model = Ternary-Bonsai-2-27B-PQ2_0.gguf
+mmproj = Ternary-Bonsai-2-27B-mmproj-Q8_0.gguf
+```
+
+Notes: ternary 27B (≈1.7 bpw), `PQ2_0` packing (each trit in a 2-bit slot; faster prefill). Best raw code of the set (clamped `rAF` + fine sub-stepping) but **soft-locks after the first life** — `resetBall()` leaves `phase = PLAYING`, so Space can't relaunch. Rank 7.
 
 ---
 
@@ -336,7 +382,7 @@ Only 35B MoE in test, has `mmproj` (vision). No speculative decoding.
 
 ---
 
-## 7) gemma4-26A4B — `[gemma4-26B-A4B-Q4]` — 7.0 partial
+## 8) gemma4-26A4B — `[gemma4-26B-A4B-Q4]` — 7.0 partial
 
 - **Breakout:** `models/gemma4-26A4B/index.html` (337 lines)
 - **GGUF:** `gemma4-26B-A4B-Q4/gemma-4-26B-A4B-it-qat-UD-Q4_K_XL.gguf`
@@ -384,7 +430,7 @@ Distinctive: only `n-gpu-layers 26` and `spec-draft-n-max 4` + explicit `model-d
 
 ---
 
-## 8) ornith-1-5-9b — `[ornith-1.5-9b]` — 6.5 fail
+## 9) ornith-1-5-9b — `[ornith-1.5-9b]` — 6.5 fail
 
 - **Breakout:** `models/ornith-1-5-9b/index.html` (442 lines)
 - **GGUF:** `ornith-1.5-9b/Ornith-1.5-9B-Q8_0.gguf`
@@ -426,7 +472,7 @@ Would have been #1 — one missing `checkBallFell()` call.
 
 ---
 
-## 9) qwen3-5-9b-Q8 — `[qwen3.5-9b-Q8-unsloth]` — 4.0 fail
+## 10) qwen3-5-9b-Q8 — `[qwen3.5-9b-Q8-unsloth]` — 4.0 fail
 
 - **Breakout:** `models/qwen3-5-9b-Q8/index.html` (385 lines)
 - **GGUF:** `qwen3.5-9b-Q8-unsloth/Qwen3.5-9B-Q8_0.gguf`
@@ -468,7 +514,7 @@ MTP-3.
 
 ---
 
-## 10) gemma4-E4B — `[gemma4-E4B-Q8-uncensored]` — 3.5 fail
+## 11) gemma4-E4B — `[gemma4-E4B-Q8-uncensored]` — 3.5 fail
 
 - **Breakout:** `models/gemma4-E4B/index.html` (426 lines)
 - **GGUF:** `gemma4-E4B-Q8-uncensored/Gemma-4-E4B-Uncensored-HauhauCS-Aggressive-Q8_K_P.gguf`
@@ -508,7 +554,7 @@ Simplest config, no reasoning/spec.
 
 ---
 
-## 11) gpt-20-Q8 — `[gpt-20b-unsloth-Q8-UD]` — 2.5 fail
+## 12) gpt-20-Q8 — `[gpt-20b-unsloth-Q8-UD]` — 2.5 fail
 
 - **Breakout:** `models/gpt-20-Q8/index.html` (244 lines, smallest)
 - **GGUF:** `gpt-20b-unsloth-Q8-UD/gpt-oss-20b-UD-Q8_K_XL.gguf`

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Breakout 3D — 11 Model Gallery</title>
+<title>Breakout 3D — 12 Model Gallery</title>
 <style>
   :root {
     --bg: #0c1118;
@@ -201,7 +201,7 @@
       <div class="brand-icon" aria-hidden="true"><svg viewBox="0 0 12 12" role="img"><rect x="5" y="1" width="2" height="1" fill="#9feaff"/><rect x="4" y="2" width="4" height="1" fill="#9feaff"/><rect x="3" y="3" width="6" height="1" fill="#9feaff"/><rect x="3" y="4" width="3" height="4" fill="#4f8cff"/><rect x="6" y="4" width="3" height="4" fill="#2f6fe0"/><rect x="3" y="4" width="1" height="4" fill="#c9ecff" opacity="0.55"/><rect x="4" y="8" width="4" height="1" fill="#1a2333"/><rect x="5" y="9" width="2" height="1" fill="#1a2333"/></svg></div>
       <div class="brand-text">
         <span class="brand-title">Breakout 3D Lab</span>
-        <span class="brand-sub">6 verified playable · Three.js 0.160.0 · rAF + Clock Δ</span>
+        <span class="brand-sub">7 verified playable · Three.js 0.160.0 · rAF + Clock Δ</span>
       </div>
     </a>
     <nav class="tabs" aria-label="Primary">
@@ -240,7 +240,7 @@
   </div>
 </div>
 
-<footer>All games are <code>models/*/index.html</code> — byte-identical, embedded via &lt;iframe&gt; without modification. 5 builds fail at runtime (fatal JS errors) — playable: the 6 green cards. · Host: <code>A320M-HD2 · R5 1600 · RTX 4060 Ti 16GB</code> · <code>CachyOS 7.2.0-1</code></footer>
+<footer>All games are <code>models/*/index.html</code> — byte-identical, embedded via &lt;iframe&gt; without modification. 5 builds fail at runtime (fatal JS errors) — playable: the 7 green cards. · Host: <code>A320M-HD2 · R5 1600 · RTX 4060 Ti 16GB</code> · <code>CachyOS 7.2.0-1</code></footer>
 
 <script>
   // Embedded from results.json + wc -l + headless-Chromium runtime test (no fetch so file:// works for the gallery shell; games themselves need http+CDN). Sorted by rank.
@@ -253,12 +253,13 @@
     { rank: 3,  model: "qwen3-8-Q3S",               family: "Qwen3.8 · 27B",                          file: "models/qwen3-8-Q3S/index.html",               score: 9.4, verdict: "pass",    loc: 1056, functionality: 9.4, codeQuality: 9.2, notes: "verified: score 10, life loss, 0 errors" },
     { rank: 4,  model: "qwen3-8-Q2",                family: "Qwen3.8 · 27B",                          file: "models/qwen3-8-Q2/index.html",                score: 9.2, verdict: "pass",    loc: 888,  functionality: 9.2, codeQuality: 8.8, notes: "verified: score 20, 0 errors" },
     { rank: 5,  model: "qwen3-8-Q3XL",              family: "Qwen3.8 · 27B",                          file: "models/qwen3-8-Q3XL/index.html",              score: 9.1, verdict: "pass",    loc: 975,  functionality: 9.1, codeQuality: 8.6, notes: "verified: score 30, burst particles, 0 errors" },
-    { rank: 6,  model: "gemma4-26A4B",              family: "Gemma4 · 26B-A4B",                       file: "models/gemma4-26A4B/index.html",              score: 8.8, verdict: "pass",    loc: 696,  functionality: 8.8, codeQuality: 7.5, notes: "verified: score 70, manual cam, 0 errors — mono audio, frozen bursts" },
-    { rank: 7,  model: "qwen3-5-9b-Q8",             family: "Qwen3.5 · 9B",                           file: "models/qwen3-5-9b-Q8/index.html",             score: 3.0, verdict: "fail",    loc: 1163, functionality: 3.0, codeQuality: 8.8, notes: "FATAL: reading 'mesh' at load — menu-only, click dead" },
-    { rank: 8,  model: "gpt-20-Q8",                family: "GPT-OSS · 20B",                          file: "models/gpt-20-Q8/index.html",                score: 2.5, verdict: "fail",    loc: 657,  functionality: 2.5, codeQuality: 7.0, notes: "FATAL: diff.abs() per frame — black screen" },
-    { rank: 9,  model: "ornith-1-5-9b",             family: "Ornith 1.5 · 9B",                        file: "models/ornith-1-5-9b/index.html",             score: 2.0, verdict: "fail",    loc: 902,  functionality: 2.0, codeQuality: 9.0, notes: "FATAL: RoundedBoxGeometry never imported — black screen" },
-    { rank: 10, model: "tiel-coder-35b-IQ3_XXS",    family: "Tiel · 35B-A3B",                         file: "models/tiel-coder-35b-IQ3_XXS/index.html",    score: 1.8, verdict: "fail",    loc: 963,  functionality: 1.8, codeQuality: 8.5, notes: "FATAL: THREE never imported (addon only) — menu-only, no canvas" },
-    { rank: 11, model: "gemma4-E4B-Q8-uncesored",   family: "Gemma4 · E4B (dir keeps typo)",          file: "models/gemma4-E4B-Q8-uncesored/index.html",   score: 1.5, verdict: "fail",    loc: 1506, functionality: 1.5, codeQuality: 8.2, notes: "FATAL: THREE undefined, zero imports — no canvas" },
+    { rank: 6,  model: "ternary-bonsai-2-27b-PQ2_0",  family: "Bonsai 2 · ternary 27B (PQ2_0)",          file: "models/ternary-bonsai-2-27b-PQ2_0/index.html",  score: 8.9, verdict: "pass",    loc: 1113, functionality: 8.9, codeQuality: 8.7, notes: "runtime: score 120, 0 errors, CAM MANUAL; pause/resume zeroes ballVel -> ball stalls after unpause" },
+    { rank: 7,  model: "gemma4-26A4B",              family: "Gemma4 · 26B-A4B",                       file: "models/gemma4-26A4B/index.html",              score: 8.8, verdict: "pass",    loc: 696,  functionality: 8.8, codeQuality: 7.5, notes: "verified: score 70, manual cam, 0 errors — mono audio, frozen bursts" },
+    { rank: 8,  model: "qwen3-5-9b-Q8",             family: "Qwen3.5 · 9B",                           file: "models/qwen3-5-9b-Q8/index.html",             score: 3.0, verdict: "fail",    loc: 1163, functionality: 3.0, codeQuality: 8.8, notes: "FATAL: reading 'mesh' at load — menu-only, click dead" },
+    { rank: 9,  model: "gpt-20-Q8",                family: "GPT-OSS · 20B",                          file: "models/gpt-20-Q8/index.html",                score: 2.5, verdict: "fail",    loc: 657,  functionality: 2.5, codeQuality: 7.0, notes: "FATAL: diff.abs() per frame — black screen" },
+    { rank: 10,  model: "ornith-1-5-9b",             family: "Ornith 1.5 · 9B",                        file: "models/ornith-1-5-9b/index.html",             score: 2.0, verdict: "fail",    loc: 902,  functionality: 2.0, codeQuality: 9.0, notes: "FATAL: RoundedBoxGeometry never imported — black screen" },
+    { rank: 11, model: "tiel-coder-35b-IQ3_XXS",    family: "Tiel · 35B-A3B",                         file: "models/tiel-coder-35b-IQ3_XXS/index.html",    score: 1.8, verdict: "fail",    loc: 963,  functionality: 1.8, codeQuality: 8.5, notes: "FATAL: THREE never imported (addon only) — menu-only, no canvas" },
+    { rank: 12, model: "gemma4-E4B-Q8-uncesored",   family: "Gemma4 · E4B (dir keeps typo)",          file: "models/gemma4-E4B-Q8-uncesored/index.html",   score: 1.5, verdict: "fail",    loc: 1506, functionality: 1.5, codeQuality: 8.2, notes: "FATAL: THREE undefined, zero imports — no canvas" },
   ];
 
   const grid = document.getElementById('grid');

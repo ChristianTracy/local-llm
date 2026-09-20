@@ -1,6 +1,6 @@
 # Breakout — Model Comparison Report
 
-**Spec:** `prompt.md` · **Date:** 2026-09-02 · **Models:** 11 · **Method:** Static code review (no browser execution)
+**Spec:** `prompt.md` · **Date:** 2026-09-02 (ternary-bonsai added 2026-09-18) · **Models:** 12 · **Method:** Static code review + headless-Chromium runtime probe for `ternary-bonsai-2-27b-PQ2_0`
 
 > Single-file `800×600` Breakout (Canvas + `requestAnimationFrame` + `deltaTime`). Tests verify the prompt spec without running the games — see “How This Was Tested”.
 
@@ -27,13 +27,14 @@
 | **4** | **qwen3-8-Q2** | **9.2** | ✅ Pass | `models/qwen3-8-Q2/index.html` | 278 |
 | **5** | **qwen3-8-Q3XL** | **9.1** | ✅ Pass | `models/qwen3-8-Q3XL/index.html` | 342 |
 | 6 | tiel-coder-35b-IQ3_XXS | 7.5 | ⚠️ Partial | `models/tiel-coder-35b-IQ3_XXS/index.html` | 465 |
-| 7 | gemma4-26A4B | 7.0 | ⚠️ Partial | `models/gemma4-26A4B/index.html` | 337 |
-| 8 | ornith-1.5-9b | 6.5 | ❌ Fail | `models/ornith-1-5-9b/index.html` | 442 |
-| 9 | qwen3-5-9b-Q8 | 4.0 | ❌ Fail | `models/qwen3-5-9b-Q8/index.html` | 385 |
-| 10 | gemma4-E4B | 3.5 | ❌ Fail | `models/gemma4-E4B/index.html` | 426 |
-| 11 | gpt-20-Q8 | 2.5 | ❌ Fail | `models/gpt-20-Q8/index.html` | 244 |
+| 7 | ternary-bonsai-2-27b-PQ2_0 | 7.4 | ⚠️ Partial | `models/ternary-bonsai-2-27b-PQ2_0/index.html` | 394 |
+| 8 | gemma4-26A4B | 7.0 | ⚠️ Partial | `models/gemma4-26A4B/index.html` | 337 |
+| 9 | ornith-1.5-9b | 6.5 | ❌ Fail | `models/ornith-1-5-9b/index.html` | 442 |
+| 10 | qwen3-5-9b-Q8 | 4.0 | ❌ Fail | `models/qwen3-5-9b-Q8/index.html` | 385 |
+| 11 | gemma4-E4B | 3.5 | ❌ Fail | `models/gemma4-E4B/index.html` | 426 |
+| 12 | gpt-20-Q8 | 2.5 | ❌ Fail | `models/gpt-20-Q8/index.html` | 244 |
 
-> **Takeaway:** `ornith` would be #1 with one fix. **Use `qwen3-8-RIDGE` as reference** — new `Q4XS` (9.4) is the closest challenger, `Q3S` / `Q2` / `Q3XL` remain drop-ins. Open the `index.html` gallery to play all 11 side-by-side.
+> **Takeaway:** `qwen3-8-RIDGE` stays #1 (9.5) and remains the reference. New entry **`ternary-bonsai-2-27b-PQ2_0` (7.4)** has the best code (`rAF` clamp + fine sub-stepping, all 12 static checks except one) but **soft-locks after the first life is lost**: the ball resets onto the paddle while the phase stays `PLAYING`, and `Space` only toggles pause, so `launch()` is unreachable and the ball never relaunches. Runtime-verified in headless Chromium. `ornith` would still jump the board with one fix. Open the `index.html` gallery to play all 12 side-by-side.
 
 ---
 
@@ -53,7 +54,7 @@
 | Win/lose + 4 screens + restart | `every(!alive)` + `gameover/victory` + click |
 | HUD (10 pts + lives) | `Score / Lives` + `+=10` |
 
-> **Runtime check not done:** open `file://` in Chrome, press `Space`/`←`, assert `y>H` loses a life, bricks add 10, 40 bricks → victory.
+> **Runtime check not done:** full playthrough to victory across all models (too slow). For `ternary-bonsai-2-27b-PQ2_0` a targeted headless-Chromium probe was run because a static pass looked correct: it confirmed the ball rests on the paddle after a life is lost (`y=552`) and three Space presses leave it there (`552 → 552`) — the soft-lock documented below.
 
 ---
 
@@ -74,22 +75,22 @@
 
 **Legend:** `✅` Pass — meets spec fully · `⚠️` Partial — minor deviation but playable · `❌` Fail — breaks spec · `➖` clamp only (dt clamped, still can tunnel) · `✅ sub` — sub-stepped movement (no tunneling)
 
-*Columns:* `RIDGE`=qwen3-8-RIDGE · `Q4XS`=qwen3-8-Q4XS · `Q3S`=qwen3-8-Q3S · `Q2`=qwen3-8-Q2 · `Q3XL`=qwen3-8-Q3XL · `tiel`=tiel-coder-35b · `g26A`=gemma4-26A4B · `ornith`=ornith-1.5-9b · `Q5-9b`=qwen3-5-9b-Q8 · `gE4B`=gemma4-E4B · `gpt20`=gpt-20-Q8
+*Columns:* `TB2`=ternary-bonsai-2-27b-PQ2_0 · `RIDGE`=qwen3-8-RIDGE · `Q4XS`=qwen3-8-Q4XS · `Q3S`=qwen3-8-Q3S · `Q2`=qwen3-8-Q2 · `Q3XL`=qwen3-8-Q3XL · `tiel`=tiel-coder-35b · `g26A`=gemma4-26A4B · `ornith`=ornith-1.5-9b · `Q5-9b`=qwen3-5-9b-Q8 · `gE4B`=gemma4-E4B · `gpt20`=gpt-20-Q8
 
-| Criterion (from `prompt.md`) | RIDGE | Q4XS | Q3S | Q2 | Q3XL | tiel | g26A | ornith | Q5-9b | gE4B | gpt20 |
-|------------------------------|-------|------|-----|----|------|------|------|--------|-------|------|-------|
-| 800×600 canvas | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| 8×5 bricks | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ⚠️* | ✅ | ✅ | ⚠️† | ✅ |
-| Row colors (5) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| ←→ / A-D controls | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ✅ | ✅ |
-| Space: launch + pause | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ⚠️‡ | ✅ | ❌ | ❌ | ❌ |
-| Paddle angle (±60°) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ✅ |
-| 3 lives + wait on paddle | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌§ | ❌ | ❌ | ❌ |
-| Win / lose conditions | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌§ | ✅ | ✅ | ❌ |
-| 4 screens + restart | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ |
-| HUD: 10 pts + lives | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌¶ | ✅ | ✅ | ✅ |
-| rAF + deltaTime | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ⚠️ |
-| Anti-tunneling | ✅ sub | ✅ sub | ✅ sub | ➖ clamp | ➖ | ➖ | ➖ | ➖ | ❌ | ❌ | ❌ |
+| Criterion (from `prompt.md`) | TB2 | RIDGE | Q4XS | Q3S | Q2 | Q3XL | tiel | g26A | ornith | Q5-9b | gE4B | gpt20 |
+|------------------------------|-----|-------|------|-----|----|------|------|------|--------|-------|------|-------|
+| 800×600 canvas | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| 8×5 bricks | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ⚠️* | ✅ | ✅ | ⚠️† | ✅ |
+| Row colors (5) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| ←→ / A-D controls | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ✅ | ✅ |
+| Space: launch + pause | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ⚠️‡ | ✅ | ❌ | ❌ | ❌ |
+| Paddle angle (±60°) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ✅ |
+| 3 lives + wait on paddle | ❌¥ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌§ | ❌ | ❌ | ❌ |
+| Win / lose conditions | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌§ | ✅ | ✅ | ❌ |
+| 4 screens + restart | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ |
+| HUD: 10 pts + lives | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌¶ | ✅ | ✅ | ✅ |
+| rAF + deltaTime | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ⚠️ |
+| Anti-tunneling | ✅ sub | ✅ sub | ✅ sub | ✅ sub | ➖ clamp | ➖ | ➖ | ➖ | ➖ | ❌ | ❌ | ❌ |
 
 **What is “Anti-tunneling”?** At high speed, the ball can “tunnel” through bricks/paddle between frames. `✅ sub` = ball movement is split into small sub-steps (`ceil(speed*dt / (radius/2))`) so it checks collision multiple times per frame — no tunneling. `➖ clamp` = only caps `dt` to `0.05` — safe at low speed but can still tunnel if very fast. `❌` = no protection.
 
@@ -100,6 +101,7 @@
 * `‡` **gemma4-26A4B:** Pressing Space while paused calls `launch()` and resets ball direction instead of resuming.
 * `§` **ornith-1.5-9b:** `checkBallFell()` / `loseLife()` exist but are never called in `update()` → ball falling never costs a life, so you can never lose.
 * `¶` **ornith-1.5-9b:** Score is `10 * (5 - row)` (10–50) instead of flat `10` per brick as spec requires.
+* `¥` **ternary-bonsai-2-27b-PQ2_0:** After a life is lost, `resetBall()` sets `onPaddle = true` but the phase stays `PLAYING`; `Space` in `PLAYING` only toggles `PAUSED`, so `launch()` is unreachable and the ball never relaunches — **soft-lock after the first life**. Verified in headless Chromium (ball rests at `y=552`; three Space presses gave `y 552 → 552`). One-line fix: give the waiting state its own phase (or launch when `onPaddle`).
 
 ---
 
@@ -109,11 +111,11 @@
 
 #### 1) qwen3-8-RIDGE — 9.5 · 324 lines
 
-**Why #1:** Only impl with clamped `rAF` + sub-step tunnel fix + separate `ready` state. `MAX_DT 0.033`, `ceil(dist/(R*0.9))`, `BRICK_MARGIN` with gap, 5 colors. Space `start/ready→launch` / `playing→paused` exact, paddle `hit*π/3`, lives → `ready` wait, 5 screens + click/any-key. **No bugs.** `Q4XS` is the same tier but needs two presses from START.
+**Reference:** Only impl with clamped `rAF` + sub-step tunnel fix + separate `ready` state. `MAX_DT 0.033`, `ceil(dist/(R*0.9))`, `BRICK_MARGIN` with gap, 5 colors. Space `start/ready→launch` / `playing→paused` exact, paddle `hit*π/3`, lives → `ready` wait, 5 screens + click/any-key. **No bugs.** `Q4XS` is the same tier but needs two presses from START.
 
-#### 2) qwen3-8-Q4XS — 9.4 · 309 lines — NEW
+#### 2) qwen3-8-Q4XS — 9.4 · 309 lines
 
-**New entry — #2:** Clean `rAF` clamp `0.05` + fine sub-step `ceil((SPEED*dt)/(R/2))`, correct `BRICK_W` with margin/gap, 5 row colors. Paddle `rel*π/3` sin/cos, overlap-based brick bounce, lives `resetBall` + `stuck` wait, `paused` flag + `PLAYING` state. Minor: `START` → `PLAYING` (stuck) requires **two** Spaces to launch (vs RIDGE one) — `launch()` uses `−π/2 ±0.3` variance (allowed). Otherwise fully compliant, shadows/gloss, hearts HUD, `click` + any-key restart.
+Clean `rAF` clamp `0.05` + fine sub-step `ceil((SPEED*dt)/(R/2))`, correct `BRICK_W` with margin/gap, 5 row colors. Paddle `rel*π/3` sin/cos, overlap-based brick bounce, lives `resetBall` + `stuck` wait, `paused` flag + `PLAYING` state. Minor: `START` → `PLAYING` (stuck) requires **two** Spaces to launch (vs RIDGE one) — `launch()` uses `−π/2 ±0.3` variance (allowed). Otherwise fully compliant, shadows/gloss, hearts HUD, `click` + any-key restart.
 
 #### 3) qwen3-8-Q3S — 9.3 · 342 lines
 
@@ -133,25 +135,29 @@ Clamp, angle `−π/2+rel*π/3`, launch variance `±π/6`, side test `px<py`.
 
 `PLAYING→launchBall` never enters `PAUSED` → Space can't pause. Otherwise solid (clamp, sin/cos, wait). Largest due to `mousemove`.
 
-#### 7) gemma4-26A4B — 7.0 · 337 lines
+#### 7) ternary-bonsai-2-27b-PQ2_0 — 7.4 · 394 lines — NEW
+
+**Best raw code, one fatal state bug.** Clamped `rAF` (`dt ≤ 0.05`) + fine sub-stepping `ceil(hypot(vx,vy)*dt/5)`, correct `BRICK_W` with gap, 5 row colors, paddle `t*75°`. But after a life is lost `resetBall()` sets `onPaddle = true` while `phase` stays `PLAYING`; `Space` in `PLAYING` only toggles pause, so `launch()` is unreachable → **soft-lock after the first life** (runtime-verified: ball rests at `y=552`, three Space presses `552 → 552`). One-line fix: launch when `onPaddle` (or add a READY phase). Also max paddle angle 75° vs spec 60°.
+
+#### 8) gemma4-26A4B — 7.0 · 337 lines
 
 Clamp `0.1` ok, but brickW ignores gap → overflow. `PAUSED→launch()` overwrites velocity; `START` hides board.
 
-#### 8) ornith-1.5-9b — 6.5 · 442 lines
+#### 9) ornith-1.5-9b — 6.5 · 442 lines
 
 **Best code, one-line bug:** `checkBallFell()` never called → can't lose. Fix: call it after `collideBricks()`. Weighted score `10*(ROWS-row)` ≠ 10.
 
 ### Tier 3 — Broken
 
-#### 9) qwen3-5-9b-Q8 — 4.0 · 385 lines
+#### 10) qwen3-5-9b-Q8 — 4.0 · 385 lines
 
 No `dt`, `if(!playing) return` stops render, paddle only on `keydown`, no pause, `resetBall` auto-launches.
 
-#### 10) gemma4-E4B — 3.5 · 426 lines
+#### 11) gemma4-E4B — 3.5 · 426 lines
 
 Faux `dt` `*16.666`, instant `dx`, inverted `cos/sin` → center shoots sideways, Space never pauses, brick 880>800.
 
-#### 11) gpt-20-Q8 — 2.5 · 244 lines
+#### 12) gpt-20-Q8 — 2.5 · 244 lines
 
 No clamp (`lastTime=0` → 1.5 s teleport), dead Space `start→playing` leaves `vx/vy=0` → **ball never moves**. Shortest but unplayable.
 

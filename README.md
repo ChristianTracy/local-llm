@@ -33,9 +33,9 @@ Practical implications:
 
 See `*/models-configurations.md` / `*.html` for the full resolved router configs per model.
 
-## Models Tested (11)
+## Models Tested (12)
 
-The same 11 local GGUF models were tested in both suites (4 additional router presets were defined but not tested).
+The same 12 local GGUF models were tested in both suites (5 additional router presets were defined but not tested). `ternary-bonsai-2-27b-PQ2_0` is a ternary (≈1.7 bpw) pack that needs the **PrismML llama.cpp fork** and ran on a separate mini-router.
 
 | # | Family / Base | Variant tested | Quant | HF repo |
 |---|---------------|----------------|-------|---------|
@@ -46,6 +46,7 @@ The same 11 local GGUF models were tested in both suites (4 additional router pr
 | 9 | gpt-oss 20B | `gpt-20-Q8` | `Q8_K_XL` (UD) | [unsloth/gpt-oss-20b-GGUF](https://huggingface.co/unsloth/gpt-oss-20b-GGUF) |
 | 10 | Ornith 1.5 9B | `ornith-1-5-9b` (+ `mmproj`) | `Q8_0` | [ornith-ai/Ornith-1.5-9B](https://huggingface.co/ornith-ai/Ornith-1.5-9B) |
 | 11 | Tiel-Coder 35B-A3B (MoE coder) | `tiel-coder-35b-IQ3_XXS` (+ `mmproj`) | `IQ3_XXS` | [peculiar-ragdoll/Tiel-Coder-35B-A3B-GGUF](https://huggingface.co/peculiar-ragdoll/Tiel-Coder-35B-A3B-GGUF) |
+| 12 | Ternary-Bonsai 2 27B (ternary) | `ternary-bonsai-2-27b-PQ2_0` (+ `mmproj`) | `PQ2_0` (2-bit-slot ternary, ≈1.7 bpw) | [prism-ml/Ternary-Bonsai-2-27B-gguf](https://huggingface.co/prism-ml/Ternary-Bonsai-2-27B-gguf) |
 
 Reasoning models generally ran with `reasoning-effort medium`, `reasoning-preserve true`, `reasoning-budget 4096` (5000 for Q3XL).
 
@@ -66,7 +67,7 @@ Detailed rankings, compliance matrices, and per-model analysis live inside each 
 │   ├── report.md / report.html    # full 2D analysis
 │   ├── results.json               # machine-readable 2D scores
 │   ├── models-configurations.md / .html
-│   ├── index.html                 # gallery — play all 11 in browser
+│   ├── index.html                 # gallery — play all 12 in browser
 │   └── models/<name>/index.html   # one output per model
 └── breakout-3d/
     ├── prompt.md                  # 3D spec
