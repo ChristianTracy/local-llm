@@ -1,5 +1,14 @@
 # local-llm — Local LLM Coding Benchmark
 
+
+Check online DEMO: [https://christiantracy.github.io/local-llm](https://christiantracy.github.io/local-llm)
+
+![gallery](gallery.png)
+
+
+
+
+
 A small, reproducible test harness for evaluating **locally-hosted LLMs on end-to-end code generation**.
 
 Each test gives every model the same natural-language spec — *"write a complete Breakout game in a single HTML file"* — and scores whether the returned file actually runs, plays, and meets the spec. No API models, no scaffolding, no fix-ups: one prompt in, one `index.html` out.
