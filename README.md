@@ -1,13 +1,12 @@
 # local-llm — Local LLM Coding Benchmark
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-4CAF50.svg)](LICENSE)
+[![Validate benchmark](https://github.com/ChristianTracy/local-llm/actions/workflows/validate.yml/badge.svg)](https://github.com/ChristianTracy/local-llm/actions/workflows/validate.yml)
+[![Demo](https://img.shields.io/badge/demo-play%20the%20games-2F81F7)](https://christiantracy.github.io/local-llm)
 
-Check online DEMO: [https://christiantracy.github.io/local-llm](https://christiantracy.github.io/local-llm)
+**Play every model output in the browser:** [christiantracy.github.io/local-llm](https://christiantracy.github.io/local-llm)
 
 ![gallery](gallery.png)
-
-
-
-
 
 A small, reproducible test harness for evaluating **locally-hosted LLMs on end-to-end code generation**.
 
@@ -19,6 +18,46 @@ Current suites:
 - [`breakout-3d/`](breakout-3d/) — 3D Breakout on Three.js 0.160.0 (importmap + CDN)
 
 Each suite contains its own `prompt.md`, per-model outputs in `models/*/index.html`, `report.md` / `report.html` with full analysis, `results.json` with machine-readable scores, and an `index.html` gallery to play all outputs side-by-side.
+
+## TL;DR Leaderboard
+
+Scores combine static code review with targeted runtime probes (headless Chromium; canvas `fillText`/`arc` hooks). **Pass** = runs and meets the spec, **partial** = runs with missing/broken features, **fail** = broken or missing output.
+
+**Breakout 2D** (`breakout/results.json`, 2026-09-02)
+
+| # | Model | Score | Verdict |
+|---|-------|-------|---------|
+| 1 | `qwen3-8-RIDGE` | 9.5 | pass |
+| 2 | `qwen3-8-Q4XS` | 9.4 | pass |
+| 3 | `qwen3-8-Q3S` | 9.3 | pass |
+| 4 | `qwen3-8-Q2` | 9.2 | pass |
+| 5 | `qwen3-8-Q3XL` | 9.1 | pass |
+| 6 | `tiel-coder-35b-IQ3_XXS` | 7.5 | partial |
+| 7 | `ternary-bonsai-2-27b-PQ2_0` | 7.4 | partial |
+| 8 | `gemma4-26A4B` | 7.0 | partial |
+| 9 | `ornith-1-5-9b` | 6.5 | fail |
+| 10 | `qwen3-5-9b-Q8` | 4.0 | fail |
+| 11 | `gemma4-E4B` | 3.5 | fail |
+| 12 | `gpt-20-Q8` | 2.5 | fail |
+
+**Breakout 3D** (`breakout-3d/results.json`, 2026-09-03)
+
+| # | Model | Score | Verdict |
+|---|-------|-------|---------|
+| 1 | `qwen3-8-RIDGE` | 9.6 | pass |
+| 2 | `qwen3-8-Q4XS` | 9.5 | pass |
+| 3 | `qwen3-8-Q3S` | 9.4 | pass |
+| 4 | `qwen3-8-Q2` | 9.2 | pass |
+| 5 | `qwen3-8-Q3XL` | 9.1 | pass |
+| 6 | `ternary-bonsai-2-27b-PQ2_0` | 8.9 | pass |
+| 7 | `gemma4-26A4B` | 8.8 | pass |
+| 8 | `qwen3-5-9b-Q8` | 3.0 | fail |
+| 9 | `gpt-20-Q8` | 2.5 | fail |
+| 10 | `ornith-1-5-9b` | 2.0 | fail |
+| 11 | `tiel-coder-35b-IQ3_XXS` | 1.8 | fail |
+| 12 | `gemma4-E4B` | 1.5 | fail |
+
+Full compliance matrices and per-model analysis live in each suite's `report.md` / `report.html`.
 
 ## Hardware & Environment
 
@@ -71,6 +110,8 @@ Detailed rankings, compliance matrices, and per-model analysis live inside each 
 ```text
 .
 ├── README.md
+├── scripts/validate.py            # CI: results.json ↔ gallery consistency
+├── .github/workflows/validate.yml # CI workflow
 ├── breakout/
 │   ├── prompt.md                  # 2D spec
 │   ├── report.md / report.html    # full 2D analysis
